@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import { LEAGUES } from '@/data/leagues';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,8 +9,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MapPin, Users, Trophy, Star } from 'lucide-react';
 
 export default function TeamSelection() {
+  const navigate = useNavigate();
   const { selectTeam } = useGame();
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+
+  const handleTeamSelect = (teamId: string) => {
+    selectTeam(teamId);
+    navigate('/dashboard');
+  };
 
   const filteredTeams = selectedLeague 
     ? LEAGUES.find(l => l.id === selectedLeague)?.teams || []
@@ -49,7 +56,7 @@ export default function TeamSelection() {
               <Card 
                 key={team.id} 
                 className="cursor-pointer transition-all hover:shadow-lg hover:border-primary group"
-                onClick={() => selectTeam(team.id)}
+                onClick={() => handleTeamSelect(team.id)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
