@@ -2,11 +2,43 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { GameProvider, useGame } from "@/contexts/GameContext";
+import { GameLayout } from "@/components/GameLayout";
+import TeamSelection from "./pages/TeamSelection";
+import Dashboard from "./pages/Dashboard";
+import Squad from "./pages/Squad";
+import Tactics from "./pages/Tactics";
+import Standings from "./pages/Standings";
+import MatchSimulation from "./pages/MatchSimulation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { getMyTeam } = useGame();
+  const team = getMyTeam();
+  
+  if (!team) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <GameLayout>{children}</GameLayout>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<TeamSelection />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/squad" element={<ProtectedRoute><Squad /></ProtectedRoute>} />
+      <Route path="/tactics" element={<ProtectedRoute><Tactics /></ProtectedRoute>} />
+      <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
+      <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -14,11 +46,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <GameProvider>
+          <AppRoutes />
+        </GameProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
