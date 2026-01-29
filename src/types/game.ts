@@ -179,9 +179,55 @@ export interface SetPiece {
 export interface StrikePlay {
   id: string;
   name: string;
-  trigger: 'first_phase' | 'second_phase' | 'lineout' | 'scrum' | 'penalty_advantage';
+  trigger: 'scrum' | 'lineout' | 'kickoff' | 'dropout' | 'penalty' | 'free_kick';
   targetArea: 'blindside' | 'midfield' | 'openside' | 'short' | 'crossfield';
+  attackPattern: AttackPattern;
+  playerPositions: PlayerPosition[];
+  runningLines: RunningLine[];
+  phases: PlayPhase[];
   description: string;
+}
+
+export interface PlayerPosition {
+  playerId: string;
+  positionNumber: PositionNumber;
+  x: number; // 0-100 percentage across pitch
+  y: number; // 0-100 percentage down pitch
+}
+
+export interface RunningLine {
+  id: string;
+  playerId: string;
+  phase: number;
+  points: { x: number; y: number }[];
+  lineType: 'run' | 'pass' | 'kick';
+}
+
+export interface PlayPhase {
+  number: number;
+  description: string;
+  attackStyle: 'wide' | 'narrow' | 'tip_on' | 'wrap' | 'switch' | 'crash_ball';
+}
+
+export interface AttackPattern {
+  wideChannels: boolean;
+  narrowPods: boolean;
+  tipOnPasses: boolean;
+  crashBalls: boolean;
+  kickingOptions: KickingOption[];
+}
+
+export interface KickingOption {
+  type: 'crossfield' | 'grubber' | 'box_kick' | 'chip' | 'up_and_under';
+  targetZone: 'left_corner' | 'right_corner' | 'behind_defence' | 'contestable';
+}
+
+export interface SetPieceFormation {
+  id: string;
+  name: string;
+  type: 'scrum' | 'lineout' | 'kickoff_receive' | 'kickoff_chase' | 'dropout';
+  playerPositions: PlayerPosition[];
+  defaultPlay?: string; // Links to a StrikePlay id
 }
 
 export interface MatchPlan {

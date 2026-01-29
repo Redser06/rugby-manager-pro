@@ -24,13 +24,15 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Target
 } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Squad', url: '/squad', icon: Users },
   { title: 'Tactics', url: '/tactics', icon: Swords },
+  { title: 'Strike Plays', url: '/strike-plays', icon: Target },
   { title: 'Match', url: '/match', icon: Play },
   { title: 'Standings', url: '/standings', icon: Trophy },
 ];
