@@ -21,14 +21,11 @@ const POSITION_GROUPS = {
   'Back Three': [11, 14, 15]
 };
 
-function PlayerDetailDialog({ player }: { player: Player }) {
+function PlayerDetailDialog({ player, open, onOpenChange }: { player: Player; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const attributes = Object.entries(player.attributes);
   
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">View</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{player.firstName} {player.lastName}</DialogTitle>
