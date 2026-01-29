@@ -84,6 +84,7 @@ export default function Squad() {
   const team = getMyTeam();
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   if (!team) return null;
 
@@ -159,7 +160,11 @@ export default function Squad() {
               </TableHeader>
               <TableBody>
                 {sortedPlayers.map(player => (
-                  <TableRow key={player.id} className={player.injured ? 'opacity-60' : ''}>
+                  <TableRow 
+                    key={player.id} 
+                    className={`cursor-pointer hover:bg-muted/50 ${player.injured ? 'opacity-60' : ''}`}
+                    onClick={() => setSelectedPlayer(player)}
+                  >
                     <TableCell className="font-bold text-primary">{player.positionNumber}</TableCell>
                     <TableCell>
                       <div>
@@ -196,9 +201,6 @@ export default function Squad() {
                         <Badge variant="outline">Available</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <PlayerDetailDialog player={player} />
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -206,6 +208,14 @@ export default function Squad() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {selectedPlayer && (
+        <PlayerDetailDialog 
+          player={selectedPlayer} 
+          open={!!selectedPlayer} 
+          onOpenChange={(open) => !open && setSelectedPlayer(null)} 
+        />
+      )}
     </div>
   );
 }
