@@ -25,7 +25,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Target
+  Target,
+  Dumbbell,
+  Activity,
+  Calendar
 } from 'lucide-react';
 
 const menuItems = [
@@ -33,6 +36,9 @@ const menuItems = [
   { title: 'Squad', url: '/squad', icon: Users },
   { title: 'Tactics', url: '/tactics', icon: Swords },
   { title: 'Strike Plays', url: '/strike-plays', icon: Target },
+  { title: 'Training', url: '/training', icon: Dumbbell },
+  { title: 'S&C', url: '/strength-conditioning', icon: Activity },
+  { title: 'Periodization', url: '/periodization', icon: Calendar },
   { title: 'Match', url: '/match', icon: Play },
   { title: 'Standings', url: '/standings', icon: Trophy },
 ];
