@@ -12,6 +12,9 @@ import Tactics from "./pages/Tactics";
 import Standings from "./pages/Standings";
 import MatchSimulation from "./pages/MatchSimulation";
 import StrikePlayEditor from "./pages/StrikePlayEditor";
+import Training from "./pages/Training";
+import StrengthConditioning from "./pages/StrengthConditioning";
+import Periodization from "./pages/Periodization";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +38,9 @@ function AppRoutes() {
       <Route path="/squad" element={<ProtectedRoute><Squad /></ProtectedRoute>} />
       <Route path="/tactics" element={<ProtectedRoute><Tactics /></ProtectedRoute>} />
       <Route path="/strike-plays" element={<ProtectedRoute><StrikePlayEditor /></ProtectedRoute>} />
+      <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />
+      <Route path="/strength-conditioning" element={<ProtectedRoute><StrengthConditioning /></ProtectedRoute>} />
+      <Route path="/periodization" element={<ProtectedRoute><Periodization /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
