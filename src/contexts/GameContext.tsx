@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { GameState, Team, League, Match } from '@/types/game';
+import { GameState, Team, League, Match, Player } from '@/types/game';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 
 interface GameContextType {
@@ -7,6 +7,7 @@ interface GameContextType {
   selectTeam: (teamId: string) => void;
   advanceWeek: () => void;
   updateTactics: (tactics: Team['tactics']) => void;
+  updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
 }
@@ -75,6 +76,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updatePlayer = (playerId: string, updates: Partial<Player>) => {
+    if (!gameState.selectedTeam) return;
+
+    const updatePlayerInArray = (players: Player[]) =>
+      players.map(p => p.id === playerId ? { ...p, ...updates } : p);
+
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? {
+        ...prev.selectedTeam,
+        players: updatePlayerInArray(prev.selectedTeam.players)
+      } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id
+            ? { ...team, players: updatePlayerInArray(team.players) }
+            : team
+        )
+      }))
+    }));
+  };
+
   const getMyTeam = (): Team | null => {
     return gameState.selectedTeam;
   };
@@ -90,6 +114,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       selectTeam,
       advanceWeek,
       updateTactics,
+      updatePlayer,
       getMyTeam,
       getMyLeague
     }}>
