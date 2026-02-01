@@ -28,12 +28,14 @@ import {
   Target,
   Dumbbell,
   Activity,
-  Calendar
+  Calendar,
+  Shirt
 } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Squad', url: '/squad', icon: Users },
+  { title: 'Team Settings', url: '/team-settings', icon: Shirt },
   { title: 'Tactics', url: '/tactics', icon: Swords },
   { title: 'Strike Plays', url: '/strike-plays', icon: Target },
   { title: 'Training', url: '/training', icon: Dumbbell },

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { GameState, Team, League, Match, Player } from '@/types/game';
+import { GameState, Team, League, Match, Player, TeamKit } from '@/types/game';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 
 interface GameContextType {
@@ -8,6 +8,7 @@ interface GameContextType {
   advanceWeek: () => void;
   updateTactics: (tactics: Team['tactics']) => void;
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
+  updateKit: (kit: TeamKit) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
 }
@@ -99,6 +100,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateKit = (kit: TeamKit) => {
+    if (!gameState.selectedTeam) return;
+
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? {
+        ...prev.selectedTeam,
+        kit
+      } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id
+            ? { ...team, kit }
+            : team
+        )
+      }))
+    }));
+  };
+
   const getMyTeam = (): Team | null => {
     return gameState.selectedTeam;
   };
@@ -115,6 +136,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       advanceWeek,
       updateTactics,
       updatePlayer,
+      updateKit,
       getMyTeam,
       getMyLeague
     }}>
