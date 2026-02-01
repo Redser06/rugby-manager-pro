@@ -145,6 +145,14 @@ export interface Player {
   injuryWeeks: number;
 }
 
+// Team Kit
+export interface TeamKit {
+  primary: string; // hex color
+  secondary: string; // hex color
+  accent: string; // hex color
+  pattern: 'solid' | 'hoops' | 'stripes' | 'halves' | 'quarters';
+}
+
 // Team interface
 export interface Team {
   id: string;
@@ -154,6 +162,7 @@ export interface Team {
   league: string;
   players: Player[];
   tactics: TeamTactics;
+  kit: TeamKit;
   homeGround: string;
   reputation: number; // 1-100
 }

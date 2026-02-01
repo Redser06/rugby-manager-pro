@@ -1,4 +1,4 @@
-import { League, Team, TeamTactics, LeagueStanding } from '@/types/game';
+import { League, Team, TeamTactics, LeagueStanding, TeamKit } from '@/types/game';
 import { generateSquad } from './playerGenerator';
 
 const DEFAULT_TACTICS: TeamTactics = {
@@ -8,6 +8,13 @@ const DEFAULT_TACTICS: TeamTactics = {
   lineoutPrimary: 'middle',
   tempo: 'controlled',
   riskLevel: 'medium'
+};
+
+const DEFAULT_KIT: TeamKit = {
+  primary: '#1e3a5f',
+  secondary: '#ffffff',
+  accent: '#d4af37',
+  pattern: 'solid'
 };
 
 function createTeam(
@@ -26,6 +33,7 @@ function createTeam(
     league,
     players: generateSquad(country, reputation),
     tactics: { ...DEFAULT_TACTICS },
+    kit: { ...DEFAULT_KIT },
     homeGround,
     reputation
   };
