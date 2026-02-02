@@ -1,10 +1,14 @@
+import { useState, useRef } from 'react';
 import { TeamKit, JerseyPattern, SockPattern } from '@/types/game';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shirt, Scissors, Footprints } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Shirt, Scissors, Footprints, Upload, Loader2, Camera } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const JERSEY_PATTERNS: { value: JerseyPattern; label: string }[] = [
   { value: 'solid', label: 'Solid' },
@@ -65,14 +69,111 @@ interface KitEditorProps {
 }
 
 export function KitEditor({ kit, onChange }: KitEditorProps) {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const updateField = <K extends keyof TeamKit>(field: K, value: TeamKit[K]) => {
     onChange({ ...kit, [field]: value });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    toast.info('Analyzing kit image...');
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const imageBase64 = await base64Promise;
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('analyze-kit', {
+        body: { imageBase64 }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to analyze image');
+      }
+
+      if (data?.kit) {
+        onChange(data.kit as TeamKit);
+        toast.success('Kit design extracted successfully!');
+      } else if (data?.error) {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('Kit analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to analyze kit image');
+    } finally {
+      setIsAnalyzing(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const showPatternOptions = kit.pattern === 'hoops' || kit.pattern === 'stripes';
 
   return (
-    <Accordion type="multiple" defaultValue={['jersey', 'trim', 'lower']} className="w-full">
+    <div className="space-y-4">
+      {/* Image Upload Section */}
+      <div className="p-4 border border-dashed border-border rounded-lg bg-muted/30">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+          id="kit-image-upload"
+        />
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Camera className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium">Upload a kit image</p>
+            <p className="text-xs text-muted-foreground">AI will extract colors and patterns automatically</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Choose Image
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <Accordion type="multiple" defaultValue={['jersey', 'trim', 'lower']} className="w-full">
       {/* Jersey Section */}
       <AccordionItem value="jersey">
         <AccordionTrigger className="hover:no-underline">
@@ -261,5 +362,6 @@ export function KitEditor({ kit, onChange }: KitEditorProps) {
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+    </div>
   );
 }
