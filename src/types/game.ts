@@ -145,12 +145,36 @@ export interface Player {
   injuryWeeks: number;
 }
 
-// Team Kit
+// Team Kit - Jersey Patterns
+export type JerseyPattern = 'solid' | 'hoops' | 'stripes' | 'halves' | 'quarters' | 'yoke' | 'band';
+
+// Team Kit - Sock Patterns
+export type SockPattern = 'solid' | 'hoops' | 'two-tone';
+
 export interface TeamKit {
-  primary: string; // hex color
-  secondary: string; // hex color
-  accent: string; // hex color
-  pattern: 'solid' | 'hoops' | 'stripes' | 'halves' | 'quarters';
+  // Jersey colors
+  primary: string;
+  secondary: string;
+  accent: string;
+  
+  // Jersey pattern
+  pattern: JerseyPattern;
+  patternSize: 'thin' | 'medium' | 'thick';
+  patternCount: number; // 2-8 for stripes/hoops
+  
+  // Trim colors
+  collarTrim: string;
+  cuffTrim: string;
+  
+  // Shorts
+  shortsColor: string;
+  shortsTrim: string;
+  
+  // Socks
+  sockPrimary: string;
+  sockSecondary: string;
+  sockPattern: SockPattern;
+  sockHoopCount: number; // 1-4 for hoops
 }
 
 // Team interface
