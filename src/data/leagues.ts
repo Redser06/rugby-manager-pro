@@ -14,7 +14,17 @@ const DEFAULT_KIT: TeamKit = {
   primary: '#1e3a5f',
   secondary: '#ffffff',
   accent: '#d4af37',
-  pattern: 'solid'
+  pattern: 'solid',
+  patternSize: 'medium',
+  patternCount: 4,
+  collarTrim: '#d4af37',
+  cuffTrim: '#d4af37',
+  shortsColor: '#1e3a5f',
+  shortsTrim: '#ffffff',
+  sockPrimary: '#1e3a5f',
+  sockSecondary: '#ffffff',
+  sockPattern: 'solid',
+  sockHoopCount: 2
 };
 
 function createTeam(
