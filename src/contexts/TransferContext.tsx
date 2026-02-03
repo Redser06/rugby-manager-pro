@@ -43,9 +43,12 @@ interface TransferContextType {
   getExpiringContracts: () => PlayerWithContract[];
   getAllAvailablePlayers: () => PlayerWithContract[];
   getPlayerContract: (playerId: string) => Contract | null;
+  getMyTeamPlayersWithContracts: () => PlayerWithContract[];
   
   // Contract updates
   setPlayerAsMarquee: (playerId: string, isMarquee: boolean) => void;
+  releasePlayer: (playerId: string) => void;
+  extendContract: (playerId: string, newSalary: number, years: number) => void;
 }
 
 const TransferContext = createContext<TransferContextType | undefined>(undefined);
@@ -400,6 +403,73 @@ export function TransferProvider({ children }: { children: ReactNode }) {
     }));
   };
   
+  const getMyTeamPlayersWithContracts = (): PlayerWithContract[] => {
+    const myTeam = getMyTeam();
+    const myLeague = getMyLeague();
+    if (!myTeam || !myLeague) return [];
+    
+    return myTeam.players.map(player => {
+      const contract = contracts[player.id];
+      return {
+        ...player,
+        contract: contract || generateContract(player, myTeam.id, myTeam.country, myLeague.name, gameState.currentSeason),
+        currentTeamId: myTeam.id,
+        currentTeamName: myTeam.name,
+        currentLeague: myLeague.name
+      };
+    });
+  };
+  
+  const releasePlayer = (playerId: string) => {
+    // Remove contract
+    setContracts(prev => {
+      const newContracts = { ...prev };
+      delete newContracts[playerId];
+      return newContracts;
+    });
+    
+    // Add to transfer state history
+    setTransferState(prev => ({
+      ...prev,
+      transferHistory: [...prev.transferHistory, {
+        id: Math.random().toString(36).substring(2, 9),
+        playerId,
+        fromTeamId: getMyTeam()?.id || '',
+        toTeamId: '',
+        offeredSalary: 0,
+        offeredCurrency: 'EUR',
+        offeredBonus: 0,
+        contractYears: 0,
+        isMarquee: false,
+        playingTimePromise: 'starter',
+        styleOfPlay: '',
+        lifestyleFactors: [],
+        projectDescription: 'Released',
+        status: 'accepted',
+        playerInterest: 0,
+        createdAt: new Date()
+      }]
+    }));
+  };
+  
+  const extendContract = (playerId: string, newSalary: number, years: number) => {
+    const currentContract = contracts[playerId];
+    if (!currentContract) return;
+    
+    const currentYear = 2024 + gameState.currentSeason - 1;
+    
+    setContracts(prev => ({
+      ...prev,
+      [playerId]: {
+        ...prev[playerId],
+        salary: newSalary,
+        yearsRemaining: years,
+        startDate: { month: 7, year: currentYear },
+        endDate: { month: 6, year: currentYear + years }
+      }
+    }));
+  };
+  
   // Helper functions
   const findPlayerById = (playerId: string): Player | null => {
     for (const league of LEAGUES) {
@@ -439,7 +509,10 @@ export function TransferProvider({ children }: { children: ReactNode }) {
       getExpiringContracts,
       getAllAvailablePlayers,
       getPlayerContract,
-      setPlayerAsMarquee
+      getMyTeamPlayersWithContracts,
+      setPlayerAsMarquee,
+      releasePlayer,
+      extendContract
     }}>
       {children}
     </TransferContext.Provider>
