@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { GameState, Team, League, Match, Player, TeamKit } from '@/types/game';
+import { GameState, Team, League, Match, Player, TeamKit, FacilityUpgradeRequest, TeamFacilities } from '@/types/game';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 
 interface GameContextType {
@@ -10,6 +10,7 @@ interface GameContextType {
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   updateKit: (kit: TeamKit) => void;
   removePlayer: (playerId: string) => void;
+  requestFacilityUpgrade: (request: Omit<FacilityUpgradeRequest, 'id' | 'requestedAt' | 'status'>) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
 }
@@ -144,6 +145,78 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const requestFacilityUpgrade = (request: Omit<FacilityUpgradeRequest, 'id' | 'requestedAt' | 'status'>) => {
+    if (!gameState.selectedTeam) return;
+
+    const newRequest: FacilityUpgradeRequest = {
+      ...request,
+      id: Math.random().toString(36).substring(2, 9),
+      requestedAt: new Date(),
+      status: 'pending'
+    };
+
+    // Simulate board response (in a real game this would be more complex)
+    const approved = Math.random() > 0.3; // 70% approval rate
+    setTimeout(() => {
+      setGameState(prev => {
+        if (!prev.selectedTeam) return prev;
+        
+        const updatedRequests = prev.selectedTeam.facilities.upgradeRequests.map(r => 
+          r.id === newRequest.id 
+            ? { 
+                ...r, 
+                status: approved ? 'approved' as const : 'rejected' as const,
+                boardResponse: approved 
+                  ? 'The board has approved your request. Work will begin immediately.'
+                  : 'The board has declined your request due to current financial constraints.'
+              }
+            : r
+        );
+
+        const updatedFacilities = {
+          ...prev.selectedTeam.facilities,
+          upgradeRequests: updatedRequests
+        };
+
+        return {
+          ...prev,
+          selectedTeam: { ...prev.selectedTeam, facilities: updatedFacilities },
+          leagues: prev.leagues.map(league => ({
+            ...league,
+            teams: league.teams.map(team =>
+              team.id === prev.selectedTeam?.id
+                ? { ...team, facilities: updatedFacilities }
+                : team
+            )
+          }))
+        };
+      });
+    }, 3000); // Simulate 3 second delay for board decision
+
+    // Add the request immediately as pending
+    setGameState(prev => {
+      if (!prev.selectedTeam) return prev;
+
+      const updatedFacilities = {
+        ...prev.selectedTeam.facilities,
+        upgradeRequests: [...prev.selectedTeam.facilities.upgradeRequests, newRequest]
+      };
+
+      return {
+        ...prev,
+        selectedTeam: { ...prev.selectedTeam, facilities: updatedFacilities },
+        leagues: prev.leagues.map(league => ({
+          ...league,
+          teams: league.teams.map(team =>
+            team.id === prev.selectedTeam?.id
+              ? { ...team, facilities: updatedFacilities }
+              : team
+          )
+        }))
+      };
+    });
+  };
+
   const getMyTeam = (): Team | null => {
     return gameState.selectedTeam;
   };
@@ -162,6 +235,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       updatePlayer,
       updateKit,
       removePlayer,
+      requestFacilityUpgrade,
       getMyTeam,
       getMyLeague
     }}>
