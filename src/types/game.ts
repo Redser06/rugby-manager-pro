@@ -145,6 +145,63 @@ export interface Player {
   injuryWeeks: number;
 }
 
+// Facility Rating (1-5 stars)
+export type FacilityRating = 1 | 2 | 3 | 4 | 5;
+
+// Stadium / Home Ground
+export interface Stadium {
+  name: string;
+  capacity: number;
+  seatedCapacity: number;
+  corporateBoxes: number;
+  facilityRating: FacilityRating; // Matchday experience
+  pitchQuality: FacilityRating;
+}
+
+// Training Facilities
+export interface TrainingFacilities {
+  // Main training center
+  mainFacilityRating: FacilityRating;
+  // Specialized areas
+  gymRating: FacilityRating;
+  recoveryRating: FacilityRating; // Ice baths, physio, medical
+  analysisRating: FacilityRating; // Video analysis, technology
+  trainingPitches: number; // Number of full-size pitches
+  indoorFacility: boolean;
+}
+
+// Youth Academy
+export interface YouthAcademy {
+  overallRating: FacilityRating;
+  scoutingNetwork: FacilityRating;
+  coachingQuality: FacilityRating;
+  youthFacilities: FacilityRating;
+  pathwayToFirstTeam: FacilityRating; // How well youth integrate
+  reputation: number; // 1-100, affects youth intake quality
+}
+
+// Facility upgrade request
+export interface FacilityUpgradeRequest {
+  id: string;
+  facilityType: 'stadium' | 'training' | 'academy';
+  specificArea: string;
+  currentRating: FacilityRating;
+  targetRating: FacilityRating;
+  estimatedCost: number;
+  status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+  requestedAt: Date;
+  completionWeeks?: number;
+  boardResponse?: string;
+}
+
+// All facilities for a team
+export interface TeamFacilities {
+  stadium: Stadium;
+  training: TrainingFacilities;
+  academy: YouthAcademy;
+  upgradeRequests: FacilityUpgradeRequest[];
+}
+
 // Team Kit - Jersey Patterns
 export type JerseyPattern = 'solid' | 'hoops' | 'stripes' | 'halves' | 'quarters' | 'yoke' | 'band';
 
@@ -189,6 +246,7 @@ export interface Team {
   kit: TeamKit;
   homeGround: string;
   reputation: number; // 1-100
+  facilities: TeamFacilities;
 }
 
 // Tactics and game plan
