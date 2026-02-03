@@ -29,12 +29,14 @@ import {
   Dumbbell,
   Activity,
   Calendar,
-  Shirt
+  Shirt,
+  ArrowRightLeft
 } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Squad', url: '/squad', icon: Users },
+  { title: 'Transfers', url: '/transfers', icon: ArrowRightLeft },
   { title: 'Team Settings', url: '/team-settings', icon: Shirt },
   { title: 'Tactics', url: '/tactics', icon: Swords },
   { title: 'Strike Plays', url: '/strike-plays', icon: Target },
