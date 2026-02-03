@@ -9,6 +9,7 @@ interface GameContextType {
   updateTactics: (tactics: Team['tactics']) => void;
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   updateKit: (kit: TeamKit) => void;
+  removePlayer: (playerId: string) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
 }
@@ -120,6 +121,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const removePlayer = (playerId: string) => {
+    if (!gameState.selectedTeam) return;
+
+    const filterPlayer = (players: Player[]) =>
+      players.filter(p => p.id !== playerId);
+
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? {
+        ...prev.selectedTeam,
+        players: filterPlayer(prev.selectedTeam.players)
+      } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id
+            ? { ...team, players: filterPlayer(team.players) }
+            : team
+        )
+      }))
+    }));
+  };
+
   const getMyTeam = (): Team | null => {
     return gameState.selectedTeam;
   };
@@ -137,6 +161,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       updateTactics,
       updatePlayer,
       updateKit,
+      removePlayer,
       getMyTeam,
       getMyLeague
     }}>
