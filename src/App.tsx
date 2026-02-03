@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GameProvider, useGame } from "@/contexts/GameContext";
+import { TransferProvider } from "@/contexts/TransferContext";
 import { GameLayout } from "@/components/GameLayout";
 import TeamSelection from "./pages/TeamSelection";
 import Dashboard from "./pages/Dashboard";
@@ -16,6 +17,7 @@ import Training from "./pages/Training";
 import StrengthConditioning from "./pages/StrengthConditioning";
 import Periodization from "./pages/Periodization";
 import TeamSettings from "./pages/TeamSettings";
+import Transfers from "./pages/Transfers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +45,7 @@ function AppRoutes() {
       <Route path="/strength-conditioning" element={<ProtectedRoute><StrengthConditioning /></ProtectedRoute>} />
       <Route path="/periodization" element={<ProtectedRoute><Periodization /></ProtectedRoute>} />
       <Route path="/team-settings" element={<ProtectedRoute><TeamSettings /></ProtectedRoute>} />
+      <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
@@ -57,7 +60,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <GameProvider>
-          <AppRoutes />
+          <TransferProvider>
+            <AppRoutes />
+          </TransferProvider>
         </GameProvider>
       </BrowserRouter>
     </TooltipProvider>
