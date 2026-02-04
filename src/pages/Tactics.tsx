@@ -1,13 +1,20 @@
+import { useState } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { TeamTactics } from '@/types/game';
+import { ForwardPodConfig, DefensiveBackThreeShape, ExtendedTactics } from '@/types/tactics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Swords, Shield, Timer, Target, AlertTriangle, Zap } from 'lucide-react';
+import { Swords, Shield, Timer, Target, AlertTriangle, Zap, Users, Sparkles, Goal } from 'lucide-react';
+import { AttackingShapesPanel } from '@/components/tactics/AttackingShapesPanel';
+import { BacksPatternsPanel } from '@/components/tactics/BacksPatternsPanel';
+import { KickingStrategiesPanel } from '@/components/tactics/KickingStrategiesPanel';
+import { DefensiveShapesPanel } from '@/components/tactics/DefensiveShapesPanel';
 
 type TacticOption<T extends keyof TeamTactics> = {
   value: TeamTactics[T];
@@ -105,9 +112,20 @@ function TacticSelector<T extends keyof TeamTactics>({
   );
 }
 
+// Default extended tactics
+const DEFAULT_EXTENDED_TACTICS: ExtendedTactics = {
+  attackingShape: '2-4-2',
+  selectedBacksMoves: ['move_crash', 'move_miss_13'],
+  primaryKickingStrategies: ['kick_box', 'kick_territorial'],
+  defensiveShape: 'umbrella'
+};
+
 export default function Tactics() {
   const { getMyTeam, updateTactics } = useGame();
   const team = getMyTeam();
+  
+  // Extended tactics state (would be persisted in a real implementation)
+  const [extendedTactics, setExtendedTactics] = useState<ExtendedTactics>(DEFAULT_EXTENDED_TACTICS);
 
   if (!team) return null;
 
@@ -121,75 +139,140 @@ export default function Tactics() {
     });
   };
 
+  const handleExtendedTacticsChange = <T extends keyof ExtendedTactics>(key: T, value: ExtendedTactics[T]) => {
+    setExtendedTactics(prev => ({ ...prev, [key]: value }));
+    toast.success('Tactical shape updated', {
+      description: `${key.replace(/([A-Z])/g, ' $1').trim()} configured`
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Tactics</h1>
-          <p className="text-muted-foreground">Configure your team's game plan</p>
+          <p className="text-muted-foreground">Configure your team's game plan and tactical shapes</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">{team.tactics.attackStyle}</Badge>
           <Badge variant="outline">{team.tactics.defenseStyle}</Badge>
           <Badge variant="outline">{team.tactics.tempo}</Badge>
+          <Badge variant="secondary">{extendedTactics.attackingShape}</Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TacticSelector
-          title="Attack Style"
-          description="How your team attacks when in possession"
-          icon={Swords}
-          options={ATTACK_STYLES}
-          value={team.tactics.attackStyle}
-          onChange={(v) => handleTacticChange('attackStyle', v)}
-        />
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsTrigger value="general" className="gap-2">
+            <Zap className="h-4 w-4" />
+            <span className="hidden sm:inline">General</span>
+          </TabsTrigger>
+          <TabsTrigger value="attack" className="gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Attack Shapes</span>
+          </TabsTrigger>
+          <TabsTrigger value="backs" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Backs Moves</span>
+          </TabsTrigger>
+          <TabsTrigger value="kicking" className="gap-2">
+            <Goal className="h-4 w-4" />
+            <span className="hidden sm:inline">Kicking</span>
+          </TabsTrigger>
+          <TabsTrigger value="defense" className="gap-2">
+            <Shield className="h-4 w-4" />
+            <span className="hidden sm:inline">Defence</span>
+          </TabsTrigger>
+        </TabsList>
 
-        <TacticSelector
-          title="Defense Style"
-          description="Your defensive system and line speed"
-          icon={Shield}
-          options={DEFENSE_STYLES}
-          value={team.tactics.defenseStyle}
-          onChange={(v) => handleTacticChange('defenseStyle', v)}
-        />
+        <TabsContent value="general" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TacticSelector
+              title="Attack Style"
+              description="How your team attacks when in possession"
+              icon={Swords}
+              options={ATTACK_STYLES}
+              value={team.tactics.attackStyle}
+              onChange={(v) => handleTacticChange('attackStyle', v)}
+            />
 
-        <TacticSelector
-          title="Scrum Focus"
-          description="Your priority at the set piece scrum"
-          icon={Target}
-          options={SCRUM_FOCUS}
-          value={team.tactics.scrumFocus}
-          onChange={(v) => handleTacticChange('scrumFocus', v)}
-        />
+            <TacticSelector
+              title="Defense Style"
+              description="Your defensive system and line speed"
+              icon={Shield}
+              options={DEFENSE_STYLES}
+              value={team.tactics.defenseStyle}
+              onChange={(v) => handleTacticChange('defenseStyle', v)}
+            />
 
-        <TacticSelector
-          title="Lineout Primary"
-          description="Where to target your lineout throws"
-          icon={Zap}
-          options={LINEOUT_PRIMARY}
-          value={team.tactics.lineoutPrimary}
-          onChange={(v) => handleTacticChange('lineoutPrimary', v)}
-        />
+            <TacticSelector
+              title="Scrum Focus"
+              description="Your priority at the set piece scrum"
+              icon={Target}
+              options={SCRUM_FOCUS}
+              value={team.tactics.scrumFocus}
+              onChange={(v) => handleTacticChange('scrumFocus', v)}
+            />
 
-        <TacticSelector
-          title="Game Tempo"
-          description="The pace at which you want to play"
-          icon={Timer}
-          options={TEMPO}
-          value={team.tactics.tempo}
-          onChange={(v) => handleTacticChange('tempo', v)}
-        />
+            <TacticSelector
+              title="Lineout Primary"
+              description="Where to target your lineout throws"
+              icon={Zap}
+              options={LINEOUT_PRIMARY}
+              value={team.tactics.lineoutPrimary}
+              onChange={(v) => handleTacticChange('lineoutPrimary', v)}
+            />
 
-        <TacticSelector
-          title="Risk Level"
-          description="How much risk to take in your play"
-          icon={AlertTriangle}
-          options={RISK_LEVEL}
-          value={team.tactics.riskLevel}
-          onChange={(v) => handleTacticChange('riskLevel', v)}
-        />
-      </div>
+            <TacticSelector
+              title="Game Tempo"
+              description="The pace at which you want to play"
+              icon={Timer}
+              options={TEMPO}
+              value={team.tactics.tempo}
+              onChange={(v) => handleTacticChange('tempo', v)}
+            />
+
+            <TacticSelector
+              title="Risk Level"
+              description="How much risk to take in your play"
+              icon={AlertTriangle}
+              options={RISK_LEVEL}
+              value={team.tactics.riskLevel}
+              onChange={(v) => handleTacticChange('riskLevel', v)}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="attack">
+          <AttackingShapesPanel
+            selectedShape={extendedTactics.attackingShape}
+            onChange={(shape) => handleExtendedTacticsChange('attackingShape', shape)}
+          />
+        </TabsContent>
+
+        <TabsContent value="backs">
+          <BacksPatternsPanel
+            selectedMoves={extendedTactics.selectedBacksMoves}
+            onChange={(moves) => handleExtendedTacticsChange('selectedBacksMoves', moves)}
+            maxMoves={4}
+          />
+        </TabsContent>
+
+        <TabsContent value="kicking">
+          <KickingStrategiesPanel
+            selectedStrategies={extendedTactics.primaryKickingStrategies}
+            onChange={(strategies) => handleExtendedTacticsChange('primaryKickingStrategies', strategies)}
+            maxStrategies={3}
+          />
+        </TabsContent>
+
+        <TabsContent value="defense">
+          <DefensiveShapesPanel
+            selectedShape={extendedTactics.defensiveShape}
+            onChange={(shape) => handleExtendedTacticsChange('defensiveShape', shape)}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
