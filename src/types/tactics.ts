@@ -351,4 +351,224 @@ export interface ExtendedTactics {
   selectedBacksMoves: string[]; // IDs of BacksMove
   primaryKickingStrategies: string[]; // IDs of KickingStrategy (max 3)
   defensiveShape: DefensiveBackThreeShape;
+  attackPatterns: AttackPattern[]; // Multi-phase attack patterns
 }
+
+// Multi-phase attack patterns
+export type PhaseActionType = 'forward_carry' | 'backs_move' | 'kick' | 'reset';
+
+export interface PhaseAction {
+  id: string;
+  type: PhaseActionType;
+  // For forward_carry
+  shape?: ForwardPodConfig;
+  podTarget?: 'blindside' | 'openside' | 'pick_and_go' | 'crash';
+  // For backs_move
+  moveId?: string;
+  // For kick
+  kickId?: string;
+  // For reset
+  resetType?: 'quick_ball' | 'slow_set' | 'switch_point';
+}
+
+export interface AttackPhase {
+  id: string;
+  phaseNumber: number;
+  name: string;
+  actions: PhaseAction[];
+  intent: 'gain_yards' | 'create_space' | 'target_edge' | 'score' | 'build_pressure';
+  notes?: string;
+}
+
+export interface AttackPattern {
+  id: string;
+  name: string;
+  description: string;
+  trigger: 'lineout' | 'scrum' | 'penalty' | 'phase_play' | 'turnover';
+  fieldZone: 'own_22' | 'own_half' | 'midfield' | 'opposition_half' | 'opposition_22';
+  phases: AttackPhase[];
+  expectedDuration: number; // in phases/minutes
+  riskProfile: 'conservative' | 'balanced' | 'aggressive';
+  primaryObjective: string;
+  createdAt?: Date;
+}
+
+// Preset pattern templates
+export const PATTERN_TEMPLATES: Partial<AttackPattern>[] = [
+  {
+    name: 'Power Build',
+    description: 'Methodical phase play using forward carriers to suck in defenders before releasing backs.',
+    trigger: 'phase_play',
+    riskProfile: 'conservative',
+    primaryObjective: 'Tire defence and create space wide',
+    expectedDuration: 6,
+    phases: [
+      {
+        id: 'p1',
+        phaseNumber: 1,
+        name: 'Set Foundation',
+        intent: 'gain_yards',
+        actions: [
+          { id: 'a1', type: 'forward_carry', shape: '4-4', podTarget: 'crash' }
+        ]
+      },
+      {
+        id: 'p2',
+        phaseNumber: 2,
+        name: 'Build Momentum',
+        intent: 'gain_yards',
+        actions: [
+          { id: 'a2', type: 'forward_carry', shape: '4-4', podTarget: 'openside' }
+        ]
+      },
+      {
+        id: 'p3',
+        phaseNumber: 3,
+        name: 'Switch Point',
+        intent: 'create_space',
+        actions: [
+          { id: 'a3', type: 'reset', resetType: 'switch_point' }
+        ]
+      },
+      {
+        id: 'p4',
+        phaseNumber: 4,
+        name: 'Strike Wide',
+        intent: 'target_edge',
+        actions: [
+          { id: 'a4', type: 'backs_move', moveId: 'move_miss_13' }
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Quick Strike',
+    description: 'Fast tempo attack looking to score within 3 phases using backs movement.',
+    trigger: 'lineout',
+    riskProfile: 'aggressive',
+    primaryObjective: 'Create try-scoring opportunity quickly',
+    expectedDuration: 3,
+    phases: [
+      {
+        id: 'p1',
+        phaseNumber: 1,
+        name: 'Initial Thrust',
+        intent: 'gain_yards',
+        actions: [
+          { id: 'a1', type: 'backs_move', moveId: 'move_crash' }
+        ]
+      },
+      {
+        id: 'p2',
+        phaseNumber: 2,
+        name: 'Quick Recycle',
+        intent: 'create_space',
+        actions: [
+          { id: 'a2', type: 'reset', resetType: 'quick_ball' },
+          { id: 'a3', type: 'forward_carry', shape: '2-4-2', podTarget: 'blindside' }
+        ]
+      },
+      {
+        id: 'p3',
+        phaseNumber: 3,
+        name: 'Finish',
+        intent: 'score',
+        actions: [
+          { id: 'a4', type: 'backs_move', moveId: 'move_wrap_14' }
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Territorial Pressure',
+    description: 'Use kicks to pin opposition deep and build attacking position.',
+    trigger: 'phase_play',
+    riskProfile: 'conservative',
+    primaryObjective: 'Gain field position through kicking',
+    expectedDuration: 4,
+    phases: [
+      {
+        id: 'p1',
+        phaseNumber: 1,
+        name: 'Set Up',
+        intent: 'gain_yards',
+        actions: [
+          { id: 'a1', type: 'forward_carry', shape: '3-2-3', podTarget: 'crash' }
+        ]
+      },
+      {
+        id: 'p2',
+        phaseNumber: 2,
+        name: 'Territorial Kick',
+        intent: 'build_pressure',
+        actions: [
+          { id: 'a2', type: 'kick', kickId: 'kick_territorial' }
+        ]
+      },
+      {
+        id: 'p3',
+        phaseNumber: 3,
+        name: 'Pressure From Lineout',
+        intent: 'gain_yards',
+        actions: [
+          { id: 'a3', type: 'forward_carry', shape: '4-4', podTarget: 'openside' }
+        ]
+      },
+      {
+        id: 'p4',
+        phaseNumber: 4,
+        name: '50:22 Opportunity',
+        intent: 'create_space',
+        actions: [
+          { id: 'a4', type: 'kick', kickId: 'kick_5022' }
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Edge Attack',
+    description: 'Target the wide channels with pods and backs combinations.',
+    trigger: 'scrum',
+    riskProfile: 'balanced',
+    primaryObjective: 'Create overlap on the edges',
+    expectedDuration: 4,
+    phases: [
+      {
+        id: 'p1',
+        phaseNumber: 1,
+        name: 'Wide Pod Carry',
+        intent: 'target_edge',
+        actions: [
+          { id: 'a1', type: 'forward_carry', shape: '2-4-2', podTarget: 'openside' }
+        ]
+      },
+      {
+        id: 'p2',
+        phaseNumber: 2,
+        name: 'Reset Centre',
+        intent: 'create_space',
+        actions: [
+          { id: 'a2', type: 'reset', resetType: 'switch_point' }
+        ]
+      },
+      {
+        id: 'p3',
+        phaseNumber: 3,
+        name: 'Backs Strike',
+        intent: 'target_edge',
+        actions: [
+          { id: 'a3', type: 'backs_move', moveId: 'move_loop' }
+        ]
+      },
+      {
+        id: 'p4',
+        phaseNumber: 4,
+        name: 'Cross-field Finish',
+        intent: 'score',
+        actions: [
+          { id: 'a4', type: 'kick', kickId: 'kick_crossfield' }
+        ]
+      }
+    ]
+  }
+];
