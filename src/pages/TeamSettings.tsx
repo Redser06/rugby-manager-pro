@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useGame } from '@/contexts/GameContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TeamKit } from '@/types/game';
-import { Palette, Save, RotateCcw, Building2 } from 'lucide-react';
+import { AICoach } from '@/types/coach';
+import { generateAICoachesForTeam } from '@/data/coachGenerator';
+import { Palette, Save, RotateCcw, Building2, Users } from 'lucide-react';
 import { KitPreview } from '@/components/kit/KitPreview';
 import { KitEditor } from '@/components/kit/KitEditor';
 import { FacilitiesPanel } from '@/components/facilities/FacilitiesPanel';
+import { ManagementStaffCard } from '@/components/coach/ManagementStaffCard';
 
 const DEFAULT_KIT: TeamKit = {
   primary: '#1e3a5f',
@@ -28,10 +33,39 @@ const DEFAULT_KIT: TeamKit = {
 
 export default function TeamSettings() {
   const { getMyTeam, updateKit, requestFacilityUpgrade } = useGame();
+  const { user } = useAuth();
   const team = getMyTeam();
   
   const [kit, setKit] = useState<TeamKit>(team?.kit || DEFAULT_KIT);
   const [hasChanges, setHasChanges] = useState(false);
+  const [managementStaff, setManagementStaff] = useState<AICoach[]>([]);
+
+  useEffect(() => {
+    if (team) {
+      fetchManagementStaff();
+    }
+  }, [team, user]);
+
+  const fetchManagementStaff = async () => {
+    if (!team) return;
+    
+    if (user) {
+      // Try to fetch from database
+      const { data } = await supabase
+        .from('ai_coaches')
+        .select('*')
+        .eq('team_id', team.id);
+      
+      if (data && data.length > 0) {
+        setManagementStaff(data as AICoach[]);
+        return;
+      }
+    }
+    
+    // Generate locally if not in database
+    const localCoaches = generateAICoachesForTeam(team.id, team.reputation);
+    setManagementStaff(localCoaches);
+  };
 
   useEffect(() => {
     if (team?.kit) {
@@ -72,6 +106,10 @@ export default function TeamSettings() {
           <TabsTrigger value="kit">
             <Palette className="h-4 w-4 mr-2" />
             Kit Designer
+          </TabsTrigger>
+          <TabsTrigger value="staff">
+            <Users className="h-4 w-4 mr-2" />
+            Management
           </TabsTrigger>
           <TabsTrigger value="facilities">
             <Building2 className="h-4 w-4 mr-2" />
@@ -126,6 +164,18 @@ export default function TeamSettings() {
             teamReputation={team.reputation}
             onRequestUpgrade={requestFacilityUpgrade}
           />
+        </TabsContent>
+
+        <TabsContent value="staff" className="mt-6">
+          {managementStaff.length > 0 ? (
+            <ManagementStaffCard coaches={managementStaff} teamName={team.name} />
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Loading management staff...
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

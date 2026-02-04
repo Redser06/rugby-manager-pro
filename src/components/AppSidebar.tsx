@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   LayoutDashboard, 
   Users, 
@@ -31,7 +32,9 @@ import {
   Calendar,
   CalendarDays,
   Shirt,
-  ArrowRightLeft
+  ArrowRightLeft,
+  UserCircle,
+  Save
 } from 'lucide-react';
 
 const menuItems = [
@@ -53,6 +56,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { getMyTeam } = useGame();
   const { state, toggleSidebar } = useSidebar();
+  const { isAuthenticated } = useAuth();
   const team = getMyTeam();
   const isCollapsed = state === 'collapsed';
 
@@ -115,18 +119,35 @@ export function AppSidebar() {
               <Badge variant="default">{team.shortName}</Badge>
               <span className="text-sm font-medium truncate">{team.name}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{team.league}</p>
-          </div>
-        )}
-        {!isCollapsed && (
+          <p className="text-xs text-muted-foreground mt-1">{team.league}</p>
+        </div>
+      )}
+      {!isCollapsed && (
+        <div className="space-y-1 mt-2">
+          <Link to="/coach">
+            <Button variant="ghost" size="sm" className="w-full justify-start">
+              {isAuthenticated ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save / Load
+                </>
+              ) : (
+                <>
+                  <UserCircle className="h-4 w-4 mr-2" />
+                  Sign In
+                </>
+              )}
+            </Button>
+          </Link>
           <Link to="/">
-            <Button variant="ghost" size="sm" className="w-full justify-start mt-2">
+            <Button variant="ghost" size="sm" className="w-full justify-start">
               <LogOut className="h-4 w-4 mr-2" />
               Change Team
             </Button>
           </Link>
-        )}
-      </SidebarFooter>
-    </Sidebar>
-  );
+        </div>
+      )}
+    </SidebarFooter>
+  </Sidebar>
+);
 }

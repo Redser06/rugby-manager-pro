@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { GameState, Team, League, Match, Player, TeamKit, FacilityUpgradeRequest, TeamFacilities } from '@/types/game';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 
@@ -13,6 +13,8 @@ interface GameContextType {
   requestFacilityUpgrade: (request: Omit<FacilityUpgradeRequest, 'id' | 'requestedAt' | 'status'>) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
+  loadGameState: (state: GameState) => void;
+  resetGame: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -226,6 +228,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return getLeagueByTeamId(gameState.selectedTeam.id) || null;
   };
 
+  const loadGameState = useCallback((state: GameState) => {
+    setGameState(state);
+  }, []);
+
+  const resetGame = useCallback(() => {
+    setGameState(INITIAL_STATE);
+    localStorage.removeItem('rugbyManagerState');
+  }, []);
+
   return (
     <GameContext.Provider value={{
       gameState,
@@ -237,7 +248,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removePlayer,
       requestFacilityUpgrade,
       getMyTeam,
-      getMyLeague
+      getMyLeague,
+      loadGameState,
+      resetGame
     }}>
       {children}
     </GameContext.Provider>

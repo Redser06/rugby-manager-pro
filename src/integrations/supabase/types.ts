@@ -14,13 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_coaches: {
+        Row: {
+          created_at: string
+          experience_level: string
+          first_name: string
+          id: string
+          last_name: string
+          nationality: string
+          reputation: number | null
+          role: string
+          specialization: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience_level: string
+          first_name: string
+          id?: string
+          last_name: string
+          nationality: string
+          reputation?: number | null
+          role: string
+          specialization: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          experience_level?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          nationality?: string
+          reputation?: number | null
+          role?: string
+          specialization?: string
+          team_id?: string
+        }
+        Relationships: []
+      }
+      coach_profiles: {
+        Row: {
+          avatar_url: string | null
+          career_started_season: number | null
+          created_at: string
+          date_of_birth: string | null
+          experience_level: string
+          first_name: string
+          id: string
+          last_name: string
+          nationality: string
+          specialization: string
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          career_started_season?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          experience_level: string
+          first_name: string
+          id?: string
+          last_name: string
+          nationality: string
+          specialization: string
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          career_started_season?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          experience_level?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          nationality?: string
+          specialization?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_saves: {
+        Row: {
+          coach_profile_id: string | null
+          created_at: string
+          current_season: number
+          current_week: number
+          game_state: Json
+          id: string
+          slot_name: string
+          slot_number: number
+          team_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coach_profile_id?: string | null
+          created_at?: string
+          current_season?: number
+          current_week?: number
+          game_state: Json
+          id?: string
+          slot_name?: string
+          slot_number: number
+          team_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coach_profile_id?: string | null
+          created_at?: string
+          current_season?: number
+          current_week?: number
+          game_state?: Json
+          id?: string
+          slot_name?: string
+          slot_number?: number
+          team_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_saves_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_owns_game_save: { Args: { save_id: string }; Returns: boolean }
+      user_owns_profile: { Args: { profile_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

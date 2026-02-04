@@ -19,6 +19,8 @@ import Periodization from "./pages/Periodization";
 import TeamSettings from "./pages/TeamSettings";
 import Transfers from "./pages/Transfers";
 import Fixtures from "./pages/Fixtures";
+import Auth from "./pages/Auth";
+import CoachManager from "./pages/CoachManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<TeamSelection />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/coach" element={<CoachManager />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/squad" element={<ProtectedRoute><Squad /></ProtectedRoute>} />
       <Route path="/tactics" element={<ProtectedRoute><Tactics /></ProtectedRoute>} />
