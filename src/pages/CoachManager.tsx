@@ -5,13 +5,15 @@ import { useGame } from '@/contexts/GameContext';
 import { supabase } from '@/integrations/supabase/client';
 import { CoachProfileForm } from '@/components/coach/CoachProfileForm';
 import { GameSaveSlots } from '@/components/saves/GameSaveSlots';
+import { CoachDevelopmentPanel } from '@/components/coach/CoachDevelopmentPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { CoachProfile } from '@/types/coach';
+import { CoachDevelopmentState, getDefaultCoachSkills, DevelopmentActivity } from '@/types/coachDevelopment';
 import { Json } from '@/integrations/supabase/types';
-import { User, Save, LogOut, Loader2, Edit } from 'lucide-react';
+import { User, Save, LogOut, Loader2, Edit, GraduationCap } from 'lucide-react';
 
 export default function CoachManager() {
   const navigate = useNavigate();
@@ -24,7 +26,45 @@ export default function CoachManager() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  // Coach development state - stored in localStorage
+  const [developmentState, setDevelopmentState] = useState<CoachDevelopmentState>(() => {
+    const saved = localStorage.getItem('coachDevelopment');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const team = gameState.selectedTeam;
+  const coachingBudget = 50000; // Available budget for development activities
+
+  // Initialize development state when profile is loaded
+  useEffect(() => {
+    if (profile && !developmentState) {
+      const initialSkills = getDefaultCoachSkills(profile.experience_level, profile.specialization);
+      const initialState: CoachDevelopmentState = {
+        skills: initialSkills,
+        totalXP: 0,
+        currentLevel: 1,
+        xpToNextLevel: 100,
+        completedActivities: [],
+        activeActivity: null,
+        activityHistory: []
+      };
+      setDevelopmentState(initialState);
+    }
+  }, [profile, developmentState]);
+
+  // Persist development state
+  useEffect(() => {
+    if (developmentState) {
+      localStorage.setItem('coachDevelopment', JSON.stringify(developmentState));
+    }
+  }, [developmentState]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -140,6 +180,46 @@ export default function CoachManager() {
     }
   };
 
+  const handleStartActivity = (activity: DevelopmentActivity) => {
+    if (!developmentState) return;
+    
+    setDevelopmentState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        activeActivity: {
+          activityId: activity.id,
+          startedWeek: gameState.currentWeek,
+          startedSeason: gameState.currentSeason,
+          completionWeek: gameState.currentWeek + activity.duration,
+          completionSeason: gameState.currentSeason
+        }
+      };
+    });
+    
+    toast({
+      title: 'Activity Started!',
+      description: `You've enrolled in ${activity.name}.`
+    });
+  };
+
+  const handleCancelActivity = () => {
+    if (!developmentState?.activeActivity) return;
+    
+    setDevelopmentState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        activeActivity: null
+      };
+    });
+    
+    toast({
+      title: 'Activity Cancelled',
+      description: 'Your current development activity has been cancelled.'
+    });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -169,11 +249,15 @@ export default function CoachManager() {
           </Button>
         </div>
 
-        <Tabs defaultValue={profile && !isEditing ? 'saves' : 'profile'}>
+        <Tabs defaultValue={profile && !isEditing ? 'development' : 'profile'}>
           <TabsList>
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
               Profile
+            </TabsTrigger>
+            <TabsTrigger value="development" disabled={!profile}>
+              <GraduationCap className="h-4 w-4 mr-2" />
+              Development
             </TabsTrigger>
             <TabsTrigger value="saves" disabled={!profile}>
               <Save className="h-4 w-4 mr-2" />
@@ -237,6 +321,19 @@ export default function CoachManager() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="development" className="mt-6">
+            {developmentState && (
+              <CoachDevelopmentPanel
+                developmentState={developmentState}
+                currentWeek={gameState.currentWeek}
+                currentSeason={gameState.currentSeason}
+                budget={coachingBudget}
+                onStartActivity={handleStartActivity}
+                onCancelActivity={handleCancelActivity}
+              />
             )}
           </TabsContent>
 
