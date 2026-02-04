@@ -21,6 +21,7 @@ import Transfers from "./pages/Transfers";
 import Fixtures from "./pages/Fixtures";
 import Auth from "./pages/Auth";
 import CoachManager from "./pages/CoachManager";
+import EuropeanCups from "./pages/EuropeanCups";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ function AppRoutes() {
       <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
       <Route path="/fixtures" element={<ProtectedRoute><Fixtures /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
+      <Route path="/european" element={<ProtectedRoute><EuropeanCups /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

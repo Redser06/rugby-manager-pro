@@ -34,7 +34,8 @@ import {
   Shirt,
   ArrowRightLeft,
   UserCircle,
-  Save
+  Save,
+  Globe
 } from 'lucide-react';
 
 const menuItems = [
@@ -50,6 +51,7 @@ const menuItems = [
   { title: 'Periodization', url: '/periodization', icon: Calendar },
   { title: 'Match', url: '/match', icon: Play },
   { title: 'Standings', url: '/standings', icon: Trophy },
+  { title: 'European Cups', url: '/european', icon: Globe },
 ];
 
 export function AppSidebar() {
