@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,34 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.warn('Missing authorization header');
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.warn('Unauthorized access attempt:', authError?.message);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { imageBase64 } = await req.json();
     
     // Validate image is provided
@@ -99,7 +128,7 @@ Be as accurate as possible with hex color codes. If you can't see certain elemen
 
 IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
 
-    console.log('Sending image to AI for analysis...');
+    console.log('Sending image to AI for analysis for user:', user.id);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -149,7 +178,7 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
     }
 
     const aiResponse = await response.json();
-    console.log('AI response received');
+    console.log('AI response received for user:', user.id);
     
     const content = aiResponse.choices?.[0]?.message?.content;
     if (!content) {
@@ -188,7 +217,7 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
       sockHoopCount: Math.min(4, Math.max(1, parseInt(kitData.sockHoopCount) || 2)),
     };
 
-    console.log('Kit analysis complete:', normalizedKit);
+    console.log('Kit analysis complete for user:', user.id);
 
     return new Response(JSON.stringify({ kit: normalizedKit }), {
       status: 200,
@@ -197,8 +226,7 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
 
   } catch (error) {
     console.error('analyze-kit error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: 'An error occurred processing your request' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
