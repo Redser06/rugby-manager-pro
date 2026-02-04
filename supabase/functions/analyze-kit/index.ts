@@ -1,9 +1,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+};
+
+// Strict hex color validation
+const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/).or(z.string().transform(() => null));
+
+// Schema for validating AI response
+const KitResponseSchema = z.object({
+  primary: hexColorSchema.optional(),
+  secondary: hexColorSchema.optional(),
+  accent: hexColorSchema.optional(),
+  pattern: z.enum(['solid', 'hoops', 'stripes', 'halves', 'quarters', 'yoke', 'band']).optional(),
+  patternSize: z.enum(['thin', 'medium', 'thick']).optional(),
+  patternCount: z.number().int().min(2).max(8).optional().or(z.string().transform(s => {
+    const n = parseInt(s);
+    return isNaN(n) ? undefined : Math.min(8, Math.max(2, n));
+  })),
+  collarTrim: hexColorSchema.optional(),
+  cuffTrim: hexColorSchema.optional(),
+  shortsColor: hexColorSchema.optional(),
+  shortsTrim: hexColorSchema.optional(),
+  sockPrimary: hexColorSchema.optional(),
+  sockSecondary: hexColorSchema.optional(),
+  sockPattern: z.enum(['solid', 'hoops', 'two-tone']).optional(),
+  sockHoopCount: z.number().int().min(1).max(4).optional().or(z.string().transform(s => {
+    const n = parseInt(s);
+    return isNaN(n) ? undefined : Math.min(4, Math.max(1, n));
+  })),
+}).passthrough();
+
+// Generic error response helper
+const errorResponse = (message: string, status: number) => {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 };
 
 serve(async (req) => {
@@ -15,11 +51,8 @@ serve(async (req) => {
     // Validate authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.warn('Missing authorization header');
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.warn('[AUTH] Missing authorization header');
+      return errorResponse('Unauthorized', 401);
     }
 
     const supabaseClient = createClient(
@@ -31,14 +64,11 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     
     if (authError || !user) {
-      console.warn('Unauthorized access attempt:', authError?.message);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.warn('[AUTH] Unauthorized access attempt');
+      return errorResponse('Unauthorized', 401);
     }
 
-    console.log('Authenticated user:', user.id);
+    console.log('[INFO] Request from authenticated user');
 
     // Rate limiting: 10 requests per hour per user
     const RATE_LIMIT_MAX = 10;
@@ -53,36 +83,32 @@ serve(async (req) => {
       .gte('created_at', windowStart);
 
     if (countError) {
-      console.error('Rate limit check error:', countError);
+      console.error('[RATE_LIMIT] Check error:', countError.message);
     } else if ((count ?? 0) >= RATE_LIMIT_MAX) {
-      console.warn('Rate limit exceeded for user:', user.id);
-      return new Response(JSON.stringify({ 
-        error: `Rate limit exceeded. You can analyze ${RATE_LIMIT_MAX} kits per hour. Please try again later.` 
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.warn('[RATE_LIMIT] Exceeded for user');
+      return errorResponse('Rate limit exceeded. Please try again later.', 429);
     }
 
-    console.log(`Rate limit check passed: ${count ?? 0}/${RATE_LIMIT_MAX} requests used`);
+    console.log(`[RATE_LIMIT] ${count ?? 0}/${RATE_LIMIT_MAX} requests used`);
 
-    const { imageBase64 } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch {
+      return errorResponse('Invalid request format', 400);
+    }
+
+    const { imageBase64 } = requestBody;
     
     // Validate image is provided
     if (!imageBase64 || typeof imageBase64 !== 'string') {
-      return new Response(JSON.stringify({ error: 'No image provided' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('No image provided', 400);
     }
 
     // Validate size limit (5MB base64 = ~3.75MB actual image)
     const MAX_SIZE = 5 * 1024 * 1024;
     if (imageBase64.length > MAX_SIZE) {
-      return new Response(JSON.stringify({ error: 'Image too large. Maximum 5MB.' }), {
-        status: 413,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Image too large. Maximum 5MB.', 413);
     }
 
     // Validate image format - check for data URL or raw base64
@@ -90,13 +116,10 @@ serve(async (req) => {
     const rawBase64Pattern = /^[A-Za-z0-9+/]+=*$/;
     
     const isDataUrl = dataUrlPattern.test(imageBase64);
-    const isRawBase64 = rawBase64Pattern.test(imageBase64.slice(0, 100)); // Check first 100 chars
+    const isRawBase64 = rawBase64Pattern.test(imageBase64.slice(0, 100));
     
     if (!isDataUrl && !isRawBase64) {
-      return new Response(JSON.stringify({ error: 'Invalid image format. Must be base64 encoded JPEG, PNG, WebP, or GIF.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Invalid image format', 400);
     }
 
     // Validate supported image types for data URLs
@@ -104,20 +127,14 @@ serve(async (req) => {
       const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
       const typeMatch = imageBase64.match(/^data:(.*?);base64,/);
       if (typeMatch && !supportedTypes.includes(typeMatch[1])) {
-        return new Response(JSON.stringify({ error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse('Unsupported image type', 400);
       }
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
-      return new Response(JSON.stringify({ error: 'Service configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[CONFIG] Required environment variable not set');
+      return errorResponse('Service temporarily unavailable', 503);
     }
 
     const systemPrompt = `You are an expert at analyzing rugby/sports kit images and extracting color and pattern information.
@@ -160,10 +177,10 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
       .insert({ user_id: user.id, endpoint: 'analyze-kit' });
     
     if (insertError) {
-      console.error('Failed to record rate limit:', insertError);
+      console.error('[RATE_LIMIT] Failed to record:', insertError.message);
     }
 
-    console.log('Sending image to AI for analysis for user:', user.id);
+    console.log('[AI] Sending image for analysis');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -196,28 +213,22 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse('Service busy. Please try again later.', 429);
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required. Please add funds to your workspace.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse('Service temporarily unavailable.', 503);
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error('[AI] Gateway error:', response.status);
+      return errorResponse('Unable to analyze image. Please try again.', 500);
     }
 
     const aiResponse = await response.json();
-    console.log('AI response received for user:', user.id);
+    console.log('[AI] Response received');
     
     const content = aiResponse.choices?.[0]?.message?.content;
     if (!content) {
-      throw new Error('No content in AI response');
+      console.error('[AI] No content in response');
+      return errorResponse('Unable to analyze image. Please try again.', 500);
     }
 
     // Parse the JSON from the AI response
@@ -226,33 +237,54 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
       // Remove any markdown code blocks if present
       const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       kitData = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
-      throw new Error('Failed to parse kit data from AI response');
+    } catch {
+      console.error('[AI] Failed to parse response as JSON');
+      return errorResponse('Unable to analyze image. Please try again.', 500);
     }
 
-    // Validate and normalize the response
-    const normalizedKit = {
-      primary: kitData.primary || '#1a365d',
-      secondary: kitData.secondary || '#ffffff',
-      accent: kitData.accent || kitData.primary || '#c7a000',
-      pattern: ['solid', 'hoops', 'stripes', 'halves', 'quarters', 'yoke', 'band'].includes(kitData.pattern) 
-        ? kitData.pattern : 'solid',
-      patternSize: ['thin', 'medium', 'thick'].includes(kitData.patternSize) 
-        ? kitData.patternSize : 'medium',
-      patternCount: Math.min(8, Math.max(2, parseInt(kitData.patternCount) || 4)),
-      collarTrim: kitData.collarTrim || kitData.secondary || '#ffffff',
-      cuffTrim: kitData.cuffTrim || kitData.secondary || '#ffffff',
-      shortsColor: kitData.shortsColor || kitData.primary || '#1a365d',
-      shortsTrim: kitData.shortsTrim || kitData.secondary || '#ffffff',
-      sockPrimary: kitData.sockPrimary || kitData.primary || '#1a365d',
-      sockSecondary: kitData.sockSecondary || kitData.secondary || '#ffffff',
-      sockPattern: ['solid', 'hoops', 'two-tone'].includes(kitData.sockPattern) 
-        ? kitData.sockPattern : 'solid',
-      sockHoopCount: Math.min(4, Math.max(1, parseInt(kitData.sockHoopCount) || 2)),
+    // Validate with Zod schema
+    const parseResult = KitResponseSchema.safeParse(kitData);
+    if (!parseResult.success) {
+      console.error('[VALIDATION] Schema validation failed:', parseResult.error.message);
+      // Continue with raw data but apply strict normalization
+    }
+
+    const validatedData = parseResult.success ? parseResult.data : kitData;
+
+    // Safely extract and validate hex colors
+    const safeHex = (value: unknown, fallback: string): string => {
+      if (typeof value === 'string' && /^#[0-9A-Fa-f]{6}$/.test(value)) {
+        return value;
+      }
+      return fallback;
     };
 
-    console.log('Kit analysis complete for user:', user.id);
+    // Normalize the response with safe defaults
+    const normalizedKit = {
+      primary: safeHex(validatedData.primary, '#1a365d'),
+      secondary: safeHex(validatedData.secondary, '#ffffff'),
+      accent: safeHex(validatedData.accent, safeHex(validatedData.primary, '#c7a000')),
+      pattern: ['solid', 'hoops', 'stripes', 'halves', 'quarters', 'yoke', 'band'].includes(validatedData.pattern) 
+        ? validatedData.pattern : 'solid',
+      patternSize: ['thin', 'medium', 'thick'].includes(validatedData.patternSize) 
+        ? validatedData.patternSize : 'medium',
+      patternCount: typeof validatedData.patternCount === 'number' 
+        ? Math.min(8, Math.max(2, validatedData.patternCount)) 
+        : 4,
+      collarTrim: safeHex(validatedData.collarTrim, safeHex(validatedData.secondary, '#ffffff')),
+      cuffTrim: safeHex(validatedData.cuffTrim, safeHex(validatedData.secondary, '#ffffff')),
+      shortsColor: safeHex(validatedData.shortsColor, safeHex(validatedData.primary, '#1a365d')),
+      shortsTrim: safeHex(validatedData.shortsTrim, safeHex(validatedData.secondary, '#ffffff')),
+      sockPrimary: safeHex(validatedData.sockPrimary, safeHex(validatedData.primary, '#1a365d')),
+      sockSecondary: safeHex(validatedData.sockSecondary, safeHex(validatedData.secondary, '#ffffff')),
+      sockPattern: ['solid', 'hoops', 'two-tone'].includes(validatedData.sockPattern) 
+        ? validatedData.sockPattern : 'solid',
+      sockHoopCount: typeof validatedData.sockHoopCount === 'number' 
+        ? Math.min(4, Math.max(1, validatedData.sockHoopCount)) 
+        : 2,
+    };
+
+    console.log('[SUCCESS] Kit analysis complete');
 
     return new Response(JSON.stringify({ kit: normalizedKit }), {
       status: 200,
@@ -260,10 +292,7 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
     });
 
   } catch (error) {
-    console.error('analyze-kit error:', error);
-    return new Response(JSON.stringify({ error: 'An error occurred processing your request' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[ERROR] Unexpected error:', error instanceof Error ? error.message : 'Unknown');
+    return errorResponse('An error occurred. Please try again.', 500);
   }
 });

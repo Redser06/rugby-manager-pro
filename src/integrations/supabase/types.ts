@@ -177,7 +177,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       user_owns_game_save: { Args: { save_id: string }; Returns: boolean }
       user_owns_profile: { Args: { profile_id: string }; Returns: boolean }
     }
