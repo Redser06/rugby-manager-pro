@@ -22,40 +22,14 @@ export default function TeamSelection() {
     setGeneratingCoaches(true);
     
     // Generate AI coaches for all teams except the selected one
+    // These are stored in the game state, not in the database
+    // The ai_coaches table is read-only reference data
     const allTeams = LEAGUES.flatMap(l => l.teams);
     const otherTeams = allTeams.filter(t => t.id !== teamId);
     const aiCoaches = generateAllAICoaches(otherTeams.map(t => ({ id: t.id, reputation: t.reputation })));
     
-    // If user is authenticated, store AI coaches in database
-    if (user) {
-      try {
-        // First, check if coaches already exist for these teams
-        const { data: existingCoaches } = await supabase
-          .from('ai_coaches')
-          .select('team_id')
-          .in('team_id', otherTeams.map(t => t.id));
-        
-        const existingTeamIds = new Set(existingCoaches?.map(c => c.team_id) || []);
-        const newCoaches = aiCoaches.filter(c => !existingTeamIds.has(c.team_id));
-        
-        if (newCoaches.length > 0) {
-          await supabase.from('ai_coaches').insert(
-            newCoaches.map(c => ({
-              team_id: c.team_id,
-              first_name: c.first_name,
-              last_name: c.last_name,
-              nationality: c.nationality,
-              role: c.role,
-              experience_level: c.experience_level,
-              specialization: c.specialization,
-              reputation: c.reputation
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Failed to save AI coaches:', error);
-      }
-    }
+    // AI coaches are managed in local game state, not persisted to database
+    // The database ai_coaches table is for shared reference data only
     
     selectTeam(teamId);
     setGeneratingCoaches(false);
