@@ -40,6 +40,32 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
+    // Rate limiting: 10 requests per hour per user
+    const RATE_LIMIT_MAX = 10;
+    const RATE_LIMIT_WINDOW_HOURS = 1;
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+    const { count, error: countError } = await supabaseClient
+      .from('rate_limits')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('endpoint', 'analyze-kit')
+      .gte('created_at', windowStart);
+
+    if (countError) {
+      console.error('Rate limit check error:', countError);
+    } else if ((count ?? 0) >= RATE_LIMIT_MAX) {
+      console.warn('Rate limit exceeded for user:', user.id);
+      return new Response(JSON.stringify({ 
+        error: `Rate limit exceeded. You can analyze ${RATE_LIMIT_MAX} kits per hour. Please try again later.` 
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Rate limit check passed: ${count ?? 0}/${RATE_LIMIT_MAX} requests used`);
+
     const { imageBase64 } = await req.json();
     
     // Validate image is provided
@@ -127,6 +153,15 @@ Pattern definitions:
 Be as accurate as possible with hex color codes. If you can't see certain elements clearly, make reasonable assumptions based on the visible colors.
 
 IMPORTANT: Return ONLY the JSON object, no additional text or markdown.`;
+
+    // Record this request for rate limiting (do this before the AI call)
+    const { error: insertError } = await supabaseClient
+      .from('rate_limits')
+      .insert({ user_id: user.id, endpoint: 'analyze-kit' });
+    
+    if (insertError) {
+      console.error('Failed to record rate limit:', insertError);
+    }
 
     console.log('Sending image to AI for analysis for user:', user.id);
 
