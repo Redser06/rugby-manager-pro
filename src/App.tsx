@@ -22,6 +22,7 @@ import Fixtures from "./pages/Fixtures";
 import Auth from "./pages/Auth";
 import CoachManager from "./pages/CoachManager";
 import EuropeanCups from "./pages/EuropeanCups";
+import ShareView from "./pages/ShareView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<TeamSelection />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/share/:code" element={<ShareView />} />
       <Route path="/coach" element={<CoachManager />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/squad" element={<ProtectedRoute><Squad /></ProtectedRoute>} />

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { ShareDialog } from '@/components/share/ShareDialog';
 import { 
   Calendar, 
   Users, 
@@ -17,7 +18,8 @@ import {
   Home,
   AlertTriangle,
   CloudRain,
-  Sun
+  Sun,
+  Share2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -84,10 +86,20 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-foreground">{team.name}</h1>
           <p className="text-muted-foreground">{league?.name} • Week {gameState.currentWeek}</p>
         </div>
-        <Button onClick={advanceWeek} size="lg">
-          <Calendar className="mr-2 h-5 w-5" />
-          Advance Week
-        </Button>
+        <div className="flex gap-2">
+          <ShareDialog 
+            trigger={
+              <Button variant="outline" size="lg" className="gap-2">
+                <Share2 className="h-5 w-5" />
+                Share Season
+              </Button>
+            }
+          />
+          <Button onClick={advanceWeek} size="lg">
+            <Calendar className="mr-2 h-5 w-5" />
+            Advance Week
+          </Button>
+        </div>
       </div>
 
       {/* Upcoming Fixture */}
