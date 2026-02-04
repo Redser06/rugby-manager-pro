@@ -38,9 +38,21 @@ export function SquadImportDialog({ onImport, currentSquadSize }: SquadImportDia
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'upload' | 'preview' | 'confirm'>('upload');
   const [loading, setLoading] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = async (format: 'csv' | 'xlsx') => {
+    setDownloadingTemplate(true);
+    try {
+      await downloadTemplate(format);
+    } catch (error) {
+      console.error('Failed to download template:', error);
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -122,12 +134,28 @@ export function SquadImportDialog({ onImport, currentSquadSize }: SquadImportDia
         </CardHeader>
         <CardContent>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => downloadTemplate('csv')}>
-              <FileText className="h-4 w-4 mr-2" />
+            <Button 
+              variant="outline" 
+              onClick={() => handleDownloadTemplate('csv')}
+              disabled={downloadingTemplate}
+            >
+              {downloadingTemplate ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4 mr-2" />
+              )}
               Download CSV
             </Button>
-            <Button variant="outline" onClick={() => downloadTemplate('xlsx')}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <Button 
+              variant="outline" 
+              onClick={() => handleDownloadTemplate('xlsx')}
+              disabled={downloadingTemplate}
+            >
+              {downloadingTemplate ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+              )}
               Download Excel
             </Button>
           </div>

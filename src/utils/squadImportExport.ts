@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Player, Position, PositionNumber, POSITION_MAP, PositionAttributes } from '@/types/game';
 
 // Column headers for the import template
@@ -107,58 +107,58 @@ export function generateSquadTemplate(): string {
   return instructions + rows.join('\n');
 }
 
-// Generate Excel template
-export function generateExcelTemplate(): Blob {
+// Generate Excel template using ExcelJS
+export async function generateExcelTemplate(): Promise<Blob> {
   const headers = [...SQUAD_IMPORT_COLUMNS, ...ALL_ATTRIBUTE_COLUMNS];
   
-  // Create worksheet data
-  const wsData = [
-    headers,
-    ['John', 'Smith', 28, 'England', 'Loosehead Prop', 75, 7, 95, 80, 85, 75, 70, 72, 70],
-    ['Mike', 'Johnson', 25, 'Ireland', 'Hooker', 78, 8, 100, '', 75, '', 80, '', 75, 85, 72],
-    ['Tom', 'Williams', 30, 'Wales', 'Fly-half', 82, 7, 90],
-  ];
+  const workbook = new ExcelJS.Workbook();
   
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Create Squad sheet
+  const squadSheet = workbook.addWorksheet('Squad');
+  
+  // Add headers
+  squadSheet.addRow(headers);
+  
+  // Add example data rows
+  squadSheet.addRow(['John', 'Smith', 28, 'England', 'Loosehead Prop', 75, 7, 95, 80, 85, 75, 70, 72, 70]);
+  squadSheet.addRow(['Mike', 'Johnson', 25, 'Ireland', 'Hooker', 78, 8, 100, '', 75, '', 80, '', 75, 85, 72]);
+  squadSheet.addRow(['Tom', 'Williams', 30, 'Wales', 'Fly-half', 82, 7, 90]);
   
   // Set column widths
-  ws['!cols'] = headers.map(() => ({ wch: 15 }));
+  squadSheet.columns = headers.map(() => ({ width: 15 }));
   
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Squad');
+  // Create Instructions sheet
+  const instructionsSheet = workbook.addWorksheet('Instructions');
   
-  // Add instructions sheet
-  const instructionsData = [
-    ['Squad Import Instructions'],
-    [''],
-    ['Required Columns:'],
-    ['firstName', 'Player first name'],
-    ['lastName', 'Player last name'],
-    ['age', 'Player age (17-45)'],
-    ['nationality', 'Player nationality'],
-    ['position', 'Player position (see valid positions below)'],
-    [''],
-    ['Optional Columns:'],
-    ['overall', 'Overall rating (1-100, default 65)'],
-    ['form', 'Current form (1-10, default 7)'],
-    ['fitness', 'Current fitness (0-100, default 100)'],
-    [''],
-    ['Valid Positions:'],
-    ...VALID_POSITIONS.map(p => [p]),
-    [''],
-    ['Note: Empty attribute cells will be auto-generated with values 60-80'],
-  ];
+  instructionsSheet.addRow(['Squad Import Instructions']);
+  instructionsSheet.addRow([]);
+  instructionsSheet.addRow(['Required Columns:']);
+  instructionsSheet.addRow(['firstName', 'Player first name']);
+  instructionsSheet.addRow(['lastName', 'Player last name']);
+  instructionsSheet.addRow(['age', 'Player age (17-45)']);
+  instructionsSheet.addRow(['nationality', 'Player nationality']);
+  instructionsSheet.addRow(['position', 'Player position (see valid positions below)']);
+  instructionsSheet.addRow([]);
+  instructionsSheet.addRow(['Optional Columns:']);
+  instructionsSheet.addRow(['overall', 'Overall rating (1-100, default 65)']);
+  instructionsSheet.addRow(['form', 'Current form (1-10, default 7)']);
+  instructionsSheet.addRow(['fitness', 'Current fitness (0-100, default 100)']);
+  instructionsSheet.addRow([]);
+  instructionsSheet.addRow(['Valid Positions:']);
+  VALID_POSITIONS.forEach(p => instructionsSheet.addRow([p]));
+  instructionsSheet.addRow([]);
+  instructionsSheet.addRow(['Note: Empty attribute cells will be auto-generated with values 60-80']);
   
-  const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
-  instructionsWs['!cols'] = [{ wch: 20 }, { wch: 50 }];
-  XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instructions');
+  // Set column widths for instructions
+  instructionsSheet.columns = [{ width: 20 }, { width: 50 }];
   
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 // Download template file
-export function downloadTemplate(format: 'csv' | 'xlsx'): void {
+export async function downloadTemplate(format: 'csv' | 'xlsx'): Promise<void> {
   if (format === 'csv') {
     const content = generateSquadTemplate();
     const blob = new Blob([content], { type: 'text/csv' });
@@ -169,7 +169,7 @@ export function downloadTemplate(format: 'csv' | 'xlsx'): void {
     link.click();
     URL.revokeObjectURL(url);
   } else {
-    const blob = generateExcelTemplate();
+    const blob = await generateExcelTemplate();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -191,45 +191,53 @@ export interface ImportResult {
   warnings: string[];
 }
 
+// Maximum file size for import (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 // Parse and validate imported file
 export function parseImportFile(file: File): Promise<ImportResult> {
   return new Promise((resolve, reject) => {
+    // Validate file size to prevent ReDoS and memory issues
+    if (file.size > MAX_FILE_SIZE) {
+      resolve({ 
+        players: [], 
+        errors: [{ row: 0, column: '', message: `File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB` }], 
+        warnings: [] 
+      });
+      return;
+    }
+
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = e.target?.result;
         let rows: unknown[][] = [];
         
         if (file.name.endsWith('.csv')) {
-          // Parse CSV
+          // Parse CSV with safe parsing (no regex that could cause ReDoS)
           const text = data as string;
-          const lines = text.split('\n').filter(line => !line.startsWith('#') && line.trim());
-          rows = lines.map(line => {
-            // Handle quoted values
-            const values: string[] = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (const char of line) {
-              if (char === '"') {
-                inQuotes = !inQuotes;
-              } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-              } else {
-                current += char;
-              }
-            }
-            values.push(current.trim());
-            return values;
-          });
+          rows = parseCSVSafe(text);
         } else {
-          // Parse Excel
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
+          // Parse Excel using ExcelJS
+          const workbook = new ExcelJS.Workbook();
+          const buffer = data as ArrayBuffer;
+          await workbook.xlsx.load(buffer);
+          
+          const worksheet = workbook.worksheets[0];
+          if (worksheet) {
+            worksheet.eachRow((row, rowNumber) => {
+              const rowValues: unknown[] = [];
+              row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                // Pad array with empty strings for missing columns
+                while (rowValues.length < colNumber - 1) {
+                  rowValues.push('');
+                }
+                rowValues.push(cell.value ?? '');
+              });
+              rows.push(rowValues);
+            });
+          }
         }
         
         if (rows.length < 2) {
@@ -255,6 +263,71 @@ export function parseImportFile(file: File): Promise<ImportResult> {
       reader.readAsArrayBuffer(file);
     }
   });
+}
+
+// Safe CSV parser that avoids ReDoS vulnerabilities
+function parseCSVSafe(text: string): unknown[][] {
+  const rows: unknown[][] = [];
+  const lines: string[] = [];
+  
+  // Split by newlines safely (no complex regex)
+  let currentLine = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      currentLine += char;
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (currentLine.trim() && !currentLine.startsWith('#')) {
+        lines.push(currentLine);
+      }
+      currentLine = '';
+      // Handle \r\n
+      if (char === '\r' && text[i + 1] === '\n') {
+        i++;
+      }
+    } else {
+      currentLine += char;
+    }
+  }
+  
+  // Don't forget the last line
+  if (currentLine.trim() && !currentLine.startsWith('#')) {
+    lines.push(currentLine);
+  }
+  
+  // Parse each line
+  for (const line of lines) {
+    const values: string[] = [];
+    let current = '';
+    let quoted = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        // Check for escaped quote
+        if (quoted && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (char === ',' && !quoted) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    rows.push(values);
+  }
+  
+  return rows;
 }
 
 function validateAndParseRows(headers: string[], dataRows: unknown[][]): ImportResult {
