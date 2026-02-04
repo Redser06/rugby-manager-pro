@@ -10,6 +10,7 @@ interface GameContextType {
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   updateKit: (kit: TeamKit) => void;
   removePlayer: (playerId: string) => void;
+  replaceSquad: (players: Player[]) => void;
   requestFacilityUpgrade: (request: Omit<FacilityUpgradeRequest, 'id' | 'requestedAt' | 'status'>) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
@@ -237,6 +238,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('rugbyManagerState');
   }, []);
 
+  const replaceSquad = useCallback((players: Player[]) => {
+    if (!gameState.selectedTeam) return;
+
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? {
+        ...prev.selectedTeam,
+        players
+      } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id
+            ? { ...team, players }
+            : team
+        )
+      }))
+    }));
+  }, [gameState.selectedTeam]);
+
   return (
     <GameContext.Provider value={{
       gameState,
@@ -246,6 +267,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       updatePlayer,
       updateKit,
       removePlayer,
+      replaceSquad,
       requestFacilityUpgrade,
       getMyTeam,
       getMyLeague,
