@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { TeamTactics } from '@/types/game';
-import { ForwardPodConfig, DefensiveBackThreeShape, ExtendedTactics } from '@/types/tactics';
+import { ForwardPodConfig, DefensiveBackThreeShape, ExtendedTactics, AttackPattern } from '@/types/tactics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,11 +10,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Swords, Shield, Timer, Target, AlertTriangle, Zap, Users, Sparkles, Goal } from 'lucide-react';
+import { Swords, Shield, Timer, Target, AlertTriangle, Zap, Users, Sparkles, Goal, Layers } from 'lucide-react';
 import { AttackingShapesPanel } from '@/components/tactics/AttackingShapesPanel';
 import { BacksPatternsPanel } from '@/components/tactics/BacksPatternsPanel';
 import { KickingStrategiesPanel } from '@/components/tactics/KickingStrategiesPanel';
 import { DefensiveShapesPanel } from '@/components/tactics/DefensiveShapesPanel';
+import { AttackPatternBuilder } from '@/components/tactics/AttackPatternBuilder';
 
 type TacticOption<T extends keyof TeamTactics> = {
   value: TeamTactics[T];
@@ -117,7 +118,8 @@ const DEFAULT_EXTENDED_TACTICS: ExtendedTactics = {
   attackingShape: '2-4-2',
   selectedBacksMoves: ['move_crash', 'move_miss_13'],
   primaryKickingStrategies: ['kick_box', 'kick_territorial'],
-  defensiveShape: 'umbrella'
+  defensiveShape: 'umbrella',
+  attackPatterns: []
 };
 
 export default function Tactics() {
@@ -162,7 +164,7 @@ export default function Tactics() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="general" className="gap-2">
             <Zap className="h-4 w-4" />
             <span className="hidden sm:inline">General</span>
@@ -178,6 +180,10 @@ export default function Tactics() {
           <TabsTrigger value="kicking" className="gap-2">
             <Goal className="h-4 w-4" />
             <span className="hidden sm:inline">Kicking</span>
+          </TabsTrigger>
+          <TabsTrigger value="patterns" className="gap-2">
+            <Layers className="h-4 w-4" />
+            <span className="hidden sm:inline">Patterns</span>
           </TabsTrigger>
           <TabsTrigger value="defense" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -263,6 +269,13 @@ export default function Tactics() {
             selectedStrategies={extendedTactics.primaryKickingStrategies}
             onChange={(strategies) => handleExtendedTacticsChange('primaryKickingStrategies', strategies)}
             maxStrategies={3}
+          />
+        </TabsContent>
+
+        <TabsContent value="patterns">
+          <AttackPatternBuilder
+            patterns={extendedTactics.attackPatterns}
+            onChange={(patterns) => handleExtendedTacticsChange('attackPatterns', patterns)}
           />
         </TabsContent>
 
