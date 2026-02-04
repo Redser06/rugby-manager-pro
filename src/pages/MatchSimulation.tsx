@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { Team, Match, MatchEvent, Player } from '@/types/game';
+import { ReplayMatch } from '@/types/replay';
 import { LEAGUES } from '@/data/leagues';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Play, Pause, FastForward, RotateCcw, Trophy } from 'lucide-react';
-
+import { Play, Pause, FastForward, RotateCcw, Trophy, Video } from 'lucide-react';
+import { ReplayViewer } from '@/components/replay/ReplayViewer';
+import { generateReplayEvents } from '@/utils/replayGenerator';
 function simulateMatch(homeTeam: Team, awayTeam: Team): Match {
   const events: MatchEvent[] = [];
   let homeScore = 0;
@@ -110,6 +112,7 @@ export default function MatchSimulation() {
   const [match, setMatch] = useState<Match | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentMinute, setCurrentMinute] = useState(0);
+  const [showReplay, setShowReplay] = useState(false);
 
   // Get opponent from same league
   const opponent = useMemo(() => {
@@ -143,7 +146,34 @@ export default function MatchSimulation() {
     setMatch(null);
     setCurrentMinute(0);
     setIsSimulating(false);
+    setShowReplay(false);
   };
+
+  // Generate replay match data from completed match
+  const replayMatch: ReplayMatch | null = useMemo(() => {
+    if (!match || !team || !opponent) return null;
+    
+    const replayEvents = generateReplayEvents(team, opponent, match.events);
+    
+    return {
+      id: match.id,
+      homeTeam: {
+        name: team.name,
+        shortName: team.shortName,
+        primaryColor: team.kit?.primary || '#1e40af',
+        secondaryColor: team.kit?.secondary || '#ffffff',
+      },
+      awayTeam: {
+        name: opponent.name,
+        shortName: opponent.shortName,
+        primaryColor: opponent.kit?.primary || '#dc2626',
+        secondaryColor: opponent.kit?.secondary || '#ffffff',
+      },
+      homeScore: match.homeScore,
+      awayScore: match.awayScore,
+      events: replayEvents,
+    };
+  }, [match, team, opponent]);
 
   if (!team || !opponent) {
     return (
@@ -264,7 +294,7 @@ export default function MatchSimulation() {
       )}
 
       {/* Final Result */}
-      {match && currentMinute >= 80 && (
+      {match && currentMinute >= 80 && !showReplay && (
         <Card className="border-primary">
           <CardContent className="pt-6 text-center">
             <Trophy className="h-12 w-12 mx-auto text-primary mb-4" />
@@ -288,8 +318,26 @@ export default function MatchSimulation() {
                 <p className="text-2xl font-bold">{match.awayTries}</p>
               </div>
             </div>
+            
+            {/* Watch Replay Button */}
+            <Button 
+              onClick={() => setShowReplay(true)} 
+              className="mt-6"
+              size="lg"
+            >
+              <Video className="mr-2 h-5 w-5" />
+              Watch 3D Replay
+            </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* 3D Replay Viewer */}
+      {showReplay && replayMatch && (
+        <ReplayViewer 
+          match={replayMatch} 
+          onClose={() => setShowReplay(false)} 
+        />
       )}
     </div>
   );
