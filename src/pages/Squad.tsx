@@ -17,6 +17,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign } from 'lucide-react';
 import { ContractManagementDialog } from '@/components/squad/ContractManagementDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
+import { SquadImportDialog } from '@/components/squad/SquadImportDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const POSITION_GROUPS = {
   'Front Row': [1, 2, 3],
@@ -208,8 +210,9 @@ function PlayerDetailDialog({ player, open, onOpenChange, onSave }: PlayerDetail
 }
 
 export default function Squad() {
-  const { getMyTeam, getMyLeague, updatePlayer, removePlayer } = useGame();
+  const { getMyTeam, getMyLeague, updatePlayer, removePlayer, replaceSquad } = useGame();
   const { getPlayerContract, getTeamSalaryCap, releasePlayer, extendContract } = useTransfer();
+  const { toast } = useToast();
   const team = getMyTeam();
   const league = getMyLeague();
   const [searchTerm, setSearchTerm] = useState('');
@@ -273,6 +276,14 @@ export default function Squad() {
     return contract && contract.yearsRemaining === 0;
   }).length;
 
+  const handleSquadImport = (players: Player[]) => {
+    replaceSquad(players);
+    toast({
+      title: 'Squad Imported!',
+      description: `Successfully imported ${players.length} players.`
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -280,6 +291,10 @@ export default function Squad() {
           <h1 className="text-3xl font-bold text-foreground">Squad</h1>
           <p className="text-muted-foreground">{team.players.length} players • {expiringCount} contracts expiring</p>
         </div>
+        <SquadImportDialog 
+          onImport={handleSquadImport} 
+          currentSquadSize={team.players.length}
+        />
       </div>
 
       {/* Salary Cap & Wage Summary */}
