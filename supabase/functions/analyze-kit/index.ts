@@ -13,16 +13,56 @@ serve(async (req) => {
   try {
     const { imageBase64 } = await req.json();
     
-    if (!imageBase64) {
+    // Validate image is provided
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
       return new Response(JSON.stringify({ error: 'No image provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Validate size limit (5MB base64 = ~3.75MB actual image)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (imageBase64.length > MAX_SIZE) {
+      return new Response(JSON.stringify({ error: 'Image too large. Maximum 5MB.' }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate image format - check for data URL or raw base64
+    const dataUrlPattern = /^data:image\/(jpeg|jpg|png|webp|gif);base64,/;
+    const rawBase64Pattern = /^[A-Za-z0-9+/]+=*$/;
+    
+    const isDataUrl = dataUrlPattern.test(imageBase64);
+    const isRawBase64 = rawBase64Pattern.test(imageBase64.slice(0, 100)); // Check first 100 chars
+    
+    if (!isDataUrl && !isRawBase64) {
+      return new Response(JSON.stringify({ error: 'Invalid image format. Must be base64 encoded JPEG, PNG, WebP, or GIF.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate supported image types for data URLs
+    if (isDataUrl) {
+      const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      const typeMatch = imageBase64.match(/^data:(.*?);base64,/);
+      if (typeMatch && !supportedTypes.includes(typeMatch[1])) {
+        return new Response(JSON.stringify({ error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      console.error('LOVABLE_API_KEY is not configured');
+      return new Response(JSON.stringify({ error: 'Service configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const systemPrompt = `You are an expert at analyzing rugby/sports kit images and extracting color and pattern information.
