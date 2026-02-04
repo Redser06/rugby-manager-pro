@@ -60,11 +60,68 @@ const INITIAL_TRANSFER_STATE: TransferState = {
   transferHistory: []
 };
 
+// Helper to safely get/set localStorage with size checking
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): boolean => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      // Quota exceeded - clear this key and try again
+      console.warn(`localStorage quota exceeded for ${key}, clearing...`);
+      try {
+        localStorage.removeItem(key);
+        localStorage.setItem(key, value);
+        return true;
+      } catch {
+        console.error(`Failed to save ${key} to localStorage`);
+        return false;
+      }
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Ignore
+    }
+  }
+};
+
+// Compress contract data to only essential fields for storage
+const compressContract = (contract: Contract) => ({
+  s: contract.salary, // salary
+  y: contract.yearsRemaining, // years
+  m: contract.isMarquee ? 1 : 0, // marquee flag
+  c: contract.currency === 'EUR' ? 0 : contract.currency === 'GBP' ? 1 : 2, // currency enum
+  t: contract.teamId, // teamId
+});
+
+const decompressContract = (compressed: { s: number; y: number; m: number; c: number; t: string }, playerId: string): Contract => ({
+  playerId,
+  teamId: compressed.t,
+  salary: compressed.s,
+  currency: compressed.c === 0 ? 'EUR' : compressed.c === 1 ? 'GBP' : 'ZAR',
+  signingBonus: 0,
+  performanceBonus: 0,
+  yearsRemaining: compressed.y,
+  startDate: { month: 7, year: 2024 },
+  endDate: { month: 6, year: 2024 + compressed.y },
+  isMarquee: compressed.m === 1
+});
+
 export function TransferProvider({ children }: { children: ReactNode }) {
   const { gameState, getMyTeam, getMyLeague } = useGame();
   
   const [transferState, setTransferState] = useState<TransferState>(() => {
-    const saved = localStorage.getItem('rugbyManagerTransfers');
+    const saved = safeLocalStorage.getItem('rugbyManagerTransfers');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -76,14 +133,23 @@ export function TransferProvider({ children }: { children: ReactNode }) {
   });
   
   const [contracts, setContracts] = useState<Record<string, Contract>>(() => {
-    const saved = localStorage.getItem('rugbyManagerContracts');
-    if (saved) {
+    // First try compressed format
+    const compressed = safeLocalStorage.getItem('rugbyManagerContractsV2');
+    if (compressed) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(compressed);
+        const result: Record<string, Contract> = {};
+        for (const [playerId, data] of Object.entries(parsed)) {
+          result[playerId] = decompressContract(data as { s: number; y: number; m: number; c: number; t: string }, playerId);
+        }
+        return result;
       } catch {
-        return {};
+        // Fall through
       }
     }
+    
+    // Clear old bloated format
+    safeLocalStorage.removeItem('rugbyManagerContracts');
     return {};
   });
   
@@ -126,13 +192,18 @@ export function TransferProvider({ children }: { children: ReactNode }) {
     }
   }, [gameState.leagues]);
   
-  // Persist state
+  // Persist transfer state
   useEffect(() => {
-    localStorage.setItem('rugbyManagerTransfers', JSON.stringify(transferState));
+    safeLocalStorage.setItem('rugbyManagerTransfers', JSON.stringify(transferState));
   }, [transferState]);
   
+  // Persist contracts in compressed format
   useEffect(() => {
-    localStorage.setItem('rugbyManagerContracts', JSON.stringify(contracts));
+    const compressed: Record<string, ReturnType<typeof compressContract>> = {};
+    for (const [playerId, contract] of Object.entries(contracts)) {
+      compressed[playerId] = compressContract(contract);
+    }
+    safeLocalStorage.setItem('rugbyManagerContractsV2', JSON.stringify(compressed));
   }, [contracts]);
   
   const isTransferWindowOpen = (): boolean => {
