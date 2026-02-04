@@ -18,6 +18,7 @@ import StrengthConditioning from "./pages/StrengthConditioning";
 import Periodization from "./pages/Periodization";
 import TeamSettings from "./pages/TeamSettings";
 import Transfers from "./pages/Transfers";
+import Fixtures from "./pages/Fixtures";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ function AppRoutes() {
       <Route path="/periodization" element={<ProtectedRoute><Periodization /></ProtectedRoute>} />
       <Route path="/team-settings" element={<ProtectedRoute><TeamSettings /></ProtectedRoute>} />
       <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
+      <Route path="/fixtures" element={<ProtectedRoute><Fixtures /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
