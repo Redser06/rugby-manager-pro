@@ -1,20 +1,64 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { LEAGUES } from '@/data/leagues';
+import { generateAllAICoaches } from '@/data/coachGenerator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MapPin, Users, Trophy, Star } from 'lucide-react';
+import { MapPin, Users, Trophy, Star, UserCircle, LogIn } from 'lucide-react';
 
 export default function TeamSelection() {
   const navigate = useNavigate();
-  const { selectTeam } = useGame();
+  const { selectTeam, resetGame } = useGame();
+  const { isAuthenticated, user } = useAuth();
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+  const [generatingCoaches, setGeneratingCoaches] = useState(false);
 
-  const handleTeamSelect = (teamId: string) => {
+  const handleTeamSelect = async (teamId: string) => {
+    setGeneratingCoaches(true);
+    
+    // Generate AI coaches for all teams except the selected one
+    const allTeams = LEAGUES.flatMap(l => l.teams);
+    const otherTeams = allTeams.filter(t => t.id !== teamId);
+    const aiCoaches = generateAllAICoaches(otherTeams.map(t => ({ id: t.id, reputation: t.reputation })));
+    
+    // If user is authenticated, store AI coaches in database
+    if (user) {
+      try {
+        // First, check if coaches already exist for these teams
+        const { data: existingCoaches } = await supabase
+          .from('ai_coaches')
+          .select('team_id')
+          .in('team_id', otherTeams.map(t => t.id));
+        
+        const existingTeamIds = new Set(existingCoaches?.map(c => c.team_id) || []);
+        const newCoaches = aiCoaches.filter(c => !existingTeamIds.has(c.team_id));
+        
+        if (newCoaches.length > 0) {
+          await supabase.from('ai_coaches').insert(
+            newCoaches.map(c => ({
+              team_id: c.team_id,
+              first_name: c.first_name,
+              last_name: c.last_name,
+              nationality: c.nationality,
+              role: c.role,
+              experience_level: c.experience_level,
+              specialization: c.specialization,
+              reputation: c.reputation
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Failed to save AI coaches:', error);
+      }
+    }
+    
     selectTeam(teamId);
+    setGeneratingCoaches(false);
     navigate('/dashboard');
   };
 
@@ -25,9 +69,29 @@ export default function TeamSelection() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Select Your Team</h1>
-          <p className="text-muted-foreground">Choose a team to manage and lead to glory</p>
+        {/* Header with auth */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Select Your Team</h1>
+            <p className="text-muted-foreground">Choose a team to manage and lead to glory</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              <Link to="/coach">
+                <Button variant="outline">
+                  <UserCircle className="h-4 w-4 mr-2" />
+                  Coach Profile
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In to Save
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* League Filter */}
@@ -55,7 +119,7 @@ export default function TeamSelection() {
             {filteredTeams.map(team => (
               <Card 
                 key={team.id} 
-                className="cursor-pointer transition-all hover:shadow-lg hover:border-primary group"
+                className={`cursor-pointer transition-all hover:shadow-lg hover:border-primary group ${generatingCoaches ? 'pointer-events-none opacity-50' : ''}`}
                 onClick={() => handleTeamSelect(team.id)}
               >
                 <CardHeader className="pb-2">
