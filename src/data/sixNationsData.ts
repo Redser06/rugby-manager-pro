@@ -131,14 +131,53 @@ export function getEligiblePlayers(
 }
 
 /**
+ * Selection policy: Ireland & England strongly prefer domestic league players.
+ * Other nations select the best available regardless of club league.
+ */
+const DOMESTIC_LEAGUE_POLICY: Partial<Record<SixNationsNation, { leagueId: string; domestic: boolean }>> = {
+  'Ireland': { leagueId: 'urc', domestic: true },   // IRFU policy: must play in Ireland (URC Irish provinces)
+  'England': { leagueId: 'prem', domestic: true },   // RFU policy: must play in Premiership
+};
+
+// Irish provinces in the URC
+const IRISH_CLUB_COUNTRIES = ['Ireland'];
+// English clubs in the Premiership — all have country 'England'
+const ENGLISH_CLUB_COUNTRIES = ['England'];
+
+/**
  * Auto-select a national squad (top players by position)
+ * Ireland & England only pick from their domestic leagues (with rare exceptions for top talent)
  */
 export function autoSelectNationalSquad(
   nation: SixNationsNation,
   leagues: League[]
 ): Array<Player & { clubTeamId: string; clubTeamName: string }> {
-  const eligible = getEligiblePlayers(nation, leagues);
+  const allEligible = getEligiblePlayers(nation, leagues);
   const selected: Array<Player & { clubTeamId: string; clubTeamName: string }> = [];
+
+  const policy = DOMESTIC_LEAGUE_POLICY[nation];
+
+  // Split into domestic and overseas pools
+  let domesticPool = allEligible;
+  let overseasPool: typeof allEligible = [];
+
+  if (policy?.domestic) {
+    if (nation === 'Ireland') {
+      // Irish provinces are URC teams with country 'Ireland'
+      domesticPool = allEligible.filter(p => {
+        const team = findTeamForPlayer(p.clubTeamId, leagues);
+        return team?.country === 'Ireland' && team?.league === 'URC';
+      });
+      overseasPool = allEligible.filter(p => !domesticPool.some(d => d.id === p.id));
+    } else if (nation === 'England') {
+      // English players must play in the Premiership
+      domesticPool = allEligible.filter(p => {
+        const team = findTeamForPlayer(p.clubTeamId, leagues);
+        return team?.league === 'Premiership';
+      });
+      overseasPool = allEligible.filter(p => !domesticPool.some(d => d.id === p.id));
+    }
+  }
 
   // Target squad: 33 players
   const positionTargets: Record<number, number> = {
@@ -149,14 +188,42 @@ export function autoSelectNationalSquad(
     11: 2, 12: 2, 13: 2, 14: 2, 15: 2, // Backs
   };
 
+  // First pass: fill from domestic pool
   for (const [posNum, count] of Object.entries(positionTargets)) {
-    const positionPlayers = eligible.filter(
+    const positionPlayers = domesticPool.filter(
       p => p.positionNumber === parseInt(posNum) && !selected.some(s => s.id === p.id)
     );
     selected.push(...positionPlayers.slice(0, count));
   }
 
+  // Second pass: if domestic pool couldn't fill all positions, use overseas as fallback
+  // (Only relevant for Ireland/England — represents "exceptional circumstances" picks)
+  if (policy?.domestic) {
+    for (const [posNum, count] of Object.entries(positionTargets)) {
+      const currentCount = selected.filter(p => p.positionNumber === parseInt(posNum)).length;
+      if (currentCount < count) {
+        const remaining = count - currentCount;
+        const positionPlayers = overseasPool.filter(
+          p => p.positionNumber === parseInt(posNum) && !selected.some(s => s.id === p.id)
+        );
+        selected.push(...positionPlayers.slice(0, remaining));
+      }
+    }
+  }
+
   return selected;
+}
+
+/** Helper to find a team by ID across all leagues */
+function findTeamForPlayer(teamId: string, leagues: League[]): { country: string; league: string } | null {
+  for (const league of leagues) {
+    for (const team of league.teams) {
+      if (team.id === teamId) {
+        return { country: team.country, league: team.league };
+      }
+    }
+  }
+  return null;
 }
 
 /**
