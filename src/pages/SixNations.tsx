@@ -53,7 +53,9 @@ export default function SixNations() {
           <CardHeader>
             <CardTitle>Choose Your Role</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <p className="text-sm text-muted-foreground">Select how you want to experience the Six Nations:</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* National Coach Option */}
               <Card
@@ -108,27 +110,30 @@ export default function SixNations() {
 
             {/* Nation Selector (for national coach mode) */}
             {mode === 'national' && (
-              <div className="space-y-3 pt-2">
-                <label className="text-sm font-medium">Select Your Nation</label>
-                <Select value={selectedNation} onValueChange={(v) => setSelectedNation(v as SixNationsNation)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a nation..." />
-                  </SelectTrigger>
-                  <SelectContent>
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="pt-6 space-y-3">
+                  <label className="text-sm font-semibold">Which nation will you coach?</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {SIX_NATIONS_LIST.map(nation => (
-                      <SelectItem key={nation} value={nation}>
-                        {FLAG_EMOJI[nation]} {nation}
-                      </SelectItem>
+                      <Button
+                        key={nation}
+                        variant={selectedNation === nation ? 'default' : 'outline'}
+                        className="h-auto py-3 flex flex-col items-center gap-1"
+                        onClick={() => setSelectedNation(nation)}
+                      >
+                        <span className="text-xl">{FLAG_EMOJI[nation]}</span>
+                        <span className="text-sm font-medium">{nation}</span>
+                      </Button>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             <Button
               size="lg"
               className="w-full"
-              disabled={mode === 'national' && !selectedNation}
+              disabled={!mode || (mode === 'national' && !selectedNation)}
               onClick={() => {
                 if (mode === 'national' && selectedNation) {
                   initTournament(selectedNation as SixNationsNation);
@@ -138,7 +143,11 @@ export default function SixNations() {
               }}
             >
               <Play className="h-5 w-5 mr-2" />
-              {mode === 'national' ? `Start as ${selectedNation || 'National'} Coach` : 'Start Six Nations'}
+              {mode === 'national' && selectedNation
+                ? `Start as ${FLAG_EMOJI[selectedNation]} ${selectedNation} Coach`
+                : mode === 'club'
+                ? 'Start Six Nations (Club Impact Mode)'
+                : 'Select a mode above to begin'}
             </Button>
           </CardContent>
         </Card>
