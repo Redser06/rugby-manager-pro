@@ -12,7 +12,9 @@ import { SixNationsStandings } from '@/components/sixnations/SixNationsStandings
 import { SixNationsFixtures } from '@/components/sixnations/SixNationsFixtures';
 import { NationalSquadSelector } from '@/components/sixnations/NationalSquadSelector';
 import { CallUpPanel } from '@/components/sixnations/CallUpPanel';
-import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag } from 'lucide-react';
+import { NationalTacticsPanel } from '@/components/sixnations/NationalTacticsPanel';
+import { NationalTrainingPanel } from '@/components/sixnations/NationalTrainingPanel';
+import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag, Swords, Dumbbell } from 'lucide-react';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
@@ -207,7 +209,7 @@ export default function SixNations() {
 
       {/* Main Content */}
       <Tabs defaultValue="standings">
-        <TabsList>
+        <TabsList className="flex flex-wrap">
           <TabsTrigger value="standings" className="gap-1">
             <Trophy className="h-4 w-4" />
             Standings
@@ -217,10 +219,20 @@ export default function SixNations() {
             Fixtures
           </TabsTrigger>
           {isNationalCoach && (
-            <TabsTrigger value="squad" className="gap-1">
-              <Users className="h-4 w-4" />
-              Squad
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="squad" className="gap-1">
+                <Users className="h-4 w-4" />
+                Squad
+              </TabsTrigger>
+              <TabsTrigger value="tactics" className="gap-1">
+                <Swords className="h-4 w-4" />
+                Tactics
+              </TabsTrigger>
+              <TabsTrigger value="training" className="gap-1">
+                <Dumbbell className="h-4 w-4" />
+                Training
+              </TabsTrigger>
+            </>
           )}
           {!isNationalCoach && (
             <TabsTrigger value="callups" className="gap-1">
@@ -239,9 +251,19 @@ export default function SixNations() {
         </TabsContent>
 
         {isNationalCoach && (
-          <TabsContent value="squad">
-            <NationalSquadSelector nation={sixNationsState.userNation!} />
-          </TabsContent>
+          <>
+            <TabsContent value="squad">
+              <NationalSquadSelector nation={sixNationsState.userNation!} />
+            </TabsContent>
+
+            <TabsContent value="tactics">
+              <NationalTacticsPanel nation={sixNationsState.userNation!} />
+            </TabsContent>
+
+            <TabsContent value="training">
+              <NationalTrainingPanel nation={sixNationsState.userNation!} />
+            </TabsContent>
+          </>
         )}
 
         {!isNationalCoach && (
