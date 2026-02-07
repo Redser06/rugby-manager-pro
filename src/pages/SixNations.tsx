@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import { useSixNations } from '@/contexts/SixNationsContext';
 import { SixNationsNation, SIX_NATIONS_LIST, SIX_NATIONS_START_WEEK } from '@/types/sixNations';
@@ -24,9 +25,20 @@ const FLAG_EMOJI: Record<SixNationsNation, string> = {
 
 export default function SixNations() {
   const { gameState } = useGame();
+  const location = useLocation();
   const { sixNationsState, initTournament, completeTournament, isSixNationsWindow } = useSixNations();
   const [selectedNation, setSelectedNation] = useState<SixNationsNation | ''>('');
   const [mode, setMode] = useState<'national' | 'club' | null>(null);
+
+  // Auto-init if navigated from team selection with a nation pre-selected
+  useEffect(() => {
+    const autoNation = (location.state as any)?.autoNation as SixNationsNation | undefined;
+    if (autoNation && !sixNationsState) {
+      setMode('national');
+      setSelectedNation(autoNation);
+      initTournament(autoNation);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isWindow = isSixNationsWindow();
   const weeksTillStart = SIX_NATIONS_START_WEEK - gameState.currentWeek;
