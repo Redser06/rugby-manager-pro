@@ -35,7 +35,8 @@ import {
   ArrowRightLeft,
   UserCircle,
   Save,
-  Globe
+  Globe,
+  Flag
 } from 'lucide-react';
 
 const menuItems = [
@@ -52,6 +53,7 @@ const menuItems = [
   { title: 'Match', url: '/match', icon: Play },
   { title: 'Standings', url: '/standings', icon: Trophy },
   { title: 'European Cups', url: '/european', icon: Globe },
+  { title: 'Six Nations', url: '/six-nations', icon: Flag },
 ];
 
 export function AppSidebar() {

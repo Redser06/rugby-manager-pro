@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GameProvider, useGame } from "@/contexts/GameContext";
 import { TransferProvider } from "@/contexts/TransferContext";
+import { SixNationsProvider } from "@/contexts/SixNationsContext";
 import { GameLayout } from "@/components/GameLayout";
 import TeamSelection from "./pages/TeamSelection";
 import Dashboard from "./pages/Dashboard";
@@ -22,6 +23,7 @@ import Fixtures from "./pages/Fixtures";
 import Auth from "./pages/Auth";
 import CoachManager from "./pages/CoachManager";
 import EuropeanCups from "./pages/EuropeanCups";
+import SixNations from "./pages/SixNations";
 import ShareView from "./pages/ShareView";
 import NotFound from "./pages/NotFound";
 
@@ -57,6 +59,7 @@ function AppRoutes() {
       <Route path="/fixtures" element={<ProtectedRoute><Fixtures /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
       <Route path="/european" element={<ProtectedRoute><EuropeanCups /></ProtectedRoute>} />
+      <Route path="/six-nations" element={<ProtectedRoute><SixNations /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -71,7 +74,9 @@ const App = () => (
       <BrowserRouter>
         <GameProvider>
           <TransferProvider>
-            <AppRoutes />
+            <SixNationsProvider>
+              <AppRoutes />
+            </SixNationsProvider>
           </TransferProvider>
         </GameProvider>
       </BrowserRouter>
