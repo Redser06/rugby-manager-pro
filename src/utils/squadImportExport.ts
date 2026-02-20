@@ -157,6 +157,36 @@ export async function generateExcelTemplate(): Promise<Blob> {
   return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
+// Export current squad to CSV
+export function exportSquadToCSV(players: Player[]): void {
+  const headers = [...SQUAD_IMPORT_COLUMNS, ...ALL_ATTRIBUTE_COLUMNS];
+  const rows = [headers.join(',')];
+
+  for (const player of players) {
+    const attrs = player.attributes as unknown as Record<string, number>;
+    const row = [
+      `"${player.firstName}"`,
+      `"${player.lastName}"`,
+      player.age,
+      `"${player.nationality}"`,
+      `"${player.position}"`,
+      player.overall,
+      player.form,
+      player.fitness,
+      ...ALL_ATTRIBUTE_COLUMNS.map(col => attrs[col] ?? '')
+    ];
+    rows.push(row.join(','));
+  }
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'squad_export.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 // Download template file
 export async function downloadTemplate(format: 'csv' | 'xlsx'): Promise<void> {
   if (format === 'csv') {
