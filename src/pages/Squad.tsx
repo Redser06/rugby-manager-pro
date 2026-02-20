@@ -294,6 +294,7 @@ export default function Squad() {
         <SquadImportDialog 
           onImport={handleSquadImport} 
           currentSquadSize={team.players.length}
+          currentPlayers={team.players}
         />
       </div>
 

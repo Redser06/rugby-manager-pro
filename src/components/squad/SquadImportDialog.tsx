@@ -27,14 +27,15 @@ import {
   Users
 } from 'lucide-react';
 import { Player } from '@/types/game';
-import { downloadTemplate, parseImportFile, ImportResult, ImportValidationError } from '@/utils/squadImportExport';
+import { downloadTemplate, parseImportFile, exportSquadToCSV, ImportResult, ImportValidationError } from '@/utils/squadImportExport';
 
 interface SquadImportDialogProps {
   onImport: (players: Player[]) => void;
   currentSquadSize: number;
+  currentPlayers?: Player[];
 }
 
-export function SquadImportDialog({ onImport, currentSquadSize }: SquadImportDialogProps) {
+export function SquadImportDialog({ onImport, currentSquadSize, currentPlayers }: SquadImportDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'upload' | 'preview' | 'confirm'>('upload');
   const [loading, setLoading] = useState(false);
@@ -161,6 +162,30 @@ export function SquadImportDialog({ onImport, currentSquadSize }: SquadImportDia
           </div>
         </CardContent>
       </Card>
+
+      {/* Export Current Squad */}
+      {currentPlayers && currentPlayers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Export Current Squad
+            </CardTitle>
+            <CardDescription>
+              Download your current {currentPlayers.length} players as CSV for offline analysis or editing
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              onClick={() => exportSquadToCSV(currentPlayers)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Download Current Squad CSV
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upload Section */}
       <Card>
