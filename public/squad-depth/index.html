@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ireland Rugby — Squad Depth Analysis 2025</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ireland-rugby-depth.css">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-badge">Squad Analysis · 2025</div>
+  <span class="hdr-shamrock">🍀</span>
+  <h1>Ireland Rugby<br><em>Squad Depth Ratings</em></h1>
+  <p class="hdr-sub">Comprehensive player pool assessment across all 15 positions</p>
+  <div class="hdr-stats" id="hdrStats"></div>
+</header>
+
+<div class="wrap">
+  <div class="legend">
+    <span class="legend-lbl">Rating Scale</span>
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-dot" style="background:#047857"></div>90–100 World Class</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#16A34A"></div>80–89 International</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#CA8A04"></div>70–79 Squad Player</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#D97706"></div>60–69 Fringe</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div>&lt;60 Emerging</div>
+    </div>
+    <div style="border-left:1px solid var(--s200);padding-left:12px;display:flex;align-items:center;gap:6px">
+      <span class="sec-badge" style="margin:0">2nd Pos</span>
+      <span style="font-size:12px;color:var(--s500)">Secondary position entry</span>
+    </div>
+  </div>
+
+  <p class="sec-title" style="margin-top:28px">Position Depth Overview — 15 Positions</p>
+  <div class="ov-grid" id="ovGrid"></div>
+
+  <div class="grp-hdr"><h2 class="grp-title">Forwards</h2><span class="grp-pill">8 Positions</span></div>
+  <div class="pos-grid" id="fwdGrid"></div>
+
+  <div class="grp-hdr"><h2 class="grp-title">Backs</h2><span class="grp-pill">7 Positions</span></div>
+  <div class="pos-grid" id="bckGrid"></div>
+</div>
+
+<footer>
+  <strong>Ireland Rugby Squad Depth Analysis 2025</strong><br>
+  Ratings reflect international performance, caps, Lions selection, current form &amp; squad readiness.<br>
+  Depth Score = weighted average (35 / 25 / 20 / 13 / 7% decay) across ranked players per position.
+</footer>
+
+<script>
+const POSITIONS = [
+  { id:1,  num:'1',  name:'Loosehead Prop',    abbr:'LHP', group:'Forwards' },
+  { id:2,  num:'2',  name:'Hooker',             abbr:'HOO', group:'Forwards' },
+  { id:3,  num:'3',  name:'Tighthead Prop',     abbr:'THP', group:'Forwards' },
+  { id:4,  num:'4',  name:'Lock (L4)',           abbr:'L4',  group:'Forwards' },
+  { id:5,  num:'5',  name:'Lock (L5)',           abbr:'L5',  group:'Forwards' },
+  { id:6,  num:'6',  name:'Blindside Flanker',  abbr:'BSF', group:'Forwards' },
+  { id:7,  num:'7',  name:'Openside Flanker',   abbr:'OSF', group:'Forwards' },
+  { id:8,  num:'8',  name:'Number Eight',        abbr:'N8',  group:'Forwards' },
+  { id:9,  num:'9',  name:'Scrum-Half',          abbr:'SH',  group:'Backs'    },
+  { id:10, num:'10', name:'Fly-Half',            abbr:'FH',  group:'Backs'    },
+  { id:11, num:'11', name:'Left Wing',           abbr:'LW',  group:'Backs'    },
+  { id:12, num:'12', name:'Inside Centre',       abbr:'IC',  group:'Backs'    },
+  { id:13, num:'13', name:'Outside Centre',      abbr:'OC',  group:'Backs'    },
+  { id:14, num:'14', name:'Right Wing',          abbr:'RW',  group:'Backs'    },
+  { id:15, num:'15', name:'Fullback',            abbr:'FB',  group:'Backs'    },
+];
+
+const PLAYERS = [
+  // 1. Loosehead Prop
+  { name:'Andrew Porter',       pos:1,  rating:92 },
+  { name:'Paddy McCarthy',      pos:1,  rating:82 },
+  { name:'Jack Boyle',          pos:1,  rating:82 },
+  { name:"Tom O'Toole",         pos:1,  rating:80 },
+  { name:'Jeremy Loughman',     pos:1,  rating:76 },
+  { name:'Michael Milne',       pos:1,  rating:60 },
+  { name:'Billy Bohan',         pos:1,  rating:55 },
+  // 2. Hooker
+  { name:'Dan Sheehan',         pos:2,  rating:95 },
+  { name:'Ronan Kelleher',      pos:2,  rating:88 },
+  { name:'Gus McCarthy',        pos:2,  rating:78 },
+  { name:'Tom Stewart',         pos:2,  rating:60 },
+  { name:'Lee Barron *',        pos:2,  rating:50 },
+  // 3. Tighthead Prop
+  { name:'Tadhg Furlong',       pos:3,  rating:88 },
+  { name:'Tom Clarkson',        pos:3,  rating:82 },
+  { name:'Finlay Bealham',      pos:3,  rating:78 },
+  { name:'Jack Aungier',        pos:3,  rating:62 },
+  { name:'Scott Wilson *',      pos:3,  rating:52 },
+  // 4. Lock L4
+  { name:'Joe McCarthy',        pos:4,  rating:90 },
+  { name:'James Ryan',          pos:4,  rating:90 },
+  { name:'Edwin Edogbo',        pos:4,  rating:81 },
+  { name:'Iain Henderson',      pos:4,  rating:78 },
+  // 5. Lock L5
+  { name:'Tadhg Beirne',        pos:5,  rating:95 },
+  { name:'Tom Ahern',           pos:5,  rating:78 },
+  { name:'Darragh Murray',      pos:5,  rating:76 },
+  { name:'Josh Murphy *',       pos:5,  rating:58 },
+  { name:'Diarmuid Mangan *',   pos:5,  rating:55 },
+  // 6. Blindside Flanker
+  { name:'Ryan Baird',          pos:6,  rating:88 },
+  { name:'Cian Prendergast',    pos:6,  rating:81 },
+  { name:'Cormac Izuchukwu',   pos:6,  rating:80 },
+  { name:'Max Deegan',          pos:6,  rating:77 },
+  { name:"Jack O'Donoghue",     pos:6,  rating:68 },
+  { name:'David McCann',        pos:6,  rating:65 },
+  { name:'James McNabney',      pos:6,  rating:55 },
+  // 7. Openside Flanker
+  { name:'Josh van der Flier',  pos:7,  rating:92 },
+  { name:'Nick Timoney',        pos:7,  rating:85 },
+  { name:'Will Conners',        pos:7,  rating:75 },
+  { name:'Scott Penny *',       pos:7,  rating:70 },
+  { name:'Alex Kendellen',      pos:7,  rating:69 },
+  { name:'John Hodnett *',      pos:7,  rating:62 },
+  { name:'Bryn Ward',           pos:7,  rating:58 },
+  // 8. Number Eight
+  { name:'Caelan Doris',        pos:8,  rating:98 },
+  { name:'Jack Conan',          pos:8,  rating:94 },
+  { name:'Gavin Coombes',       pos:8,  rating:69 },
+  { name:'Brian Gleeson',       pos:8,  rating:64 },
+  // 9. Scrum-Half
+  { name:'Jamison Gibson-Park', pos:9,  rating:98 },
+  { name:'Craig Casey',         pos:9,  rating:85 },
+  { name:'Nathan Doak',         pos:9,  rating:74 },
+  { name:'Caolin Blade',        pos:9,  rating:68 },
+  { name:'Fintan Gunne',        pos:9,  rating:63 },
+  { name:'Ben Murphy',          pos:9,  rating:59 },
+  // 10. Fly-Half
+  { name:'Jack Crowley',        pos:10, rating:85 },
+  { name:'Sam Prendergast',     pos:10, rating:80 },
+  { name:'Ciarán Frawley',      pos:10, rating:78 },
+  { name:'Harry Byrne',         pos:10, rating:77 },
+  // 11. Left Wing
+  { name:'James Lowe',          pos:11, rating:86 },
+  { name:'Jacob Stockdale',     pos:11, rating:80 },
+  { name:'Shayne Bolton',       pos:11, rating:61 },
+  { name:'JJ Kenny',            pos:11, rating:60 },
+  { name:'Zac Ward',            pos:11, rating:59 },
+  // 12. Inside Centre
+  { name:'Robbie Henshaw',      pos:12, rating:87 },
+  { name:'Stuart McCloskey',    pos:12, rating:87 },
+  { name:'Bundee Aki',          pos:12, rating:86 },
+  { name:'Charlie Tector',      pos:12, rating:60 },
+  { name:'Hugh Gavin',          pos:12, rating:57 },
+  // 13. Outside Centre
+  { name:'Garry Ringrose',      pos:13, rating:92 },
+  { name:'Tom Farrell',         pos:13, rating:80 },
+  { name:'Dan Kelly',           pos:13, rating:67 },
+  { name:'Jude Postlethwaite',  pos:13, rating:63 },
+  { name:'Cathal Forde',        pos:13, rating:56 },
+  // 14. Right Wing
+  { name:'Mack Hansen',         pos:14, rating:90 },
+  { name:'Robert Baloucoune',   pos:14, rating:89 },
+  { name:"Tommy O'Brien",       pos:14, rating:85 },
+  { name:'Calvin Nash',         pos:14, rating:83 },
+  { name:'Jordan Larmour',      pos:14, rating:75 },
+  { name:'Diarmuid Kilgallen',  pos:14, rating:60 },
+  // 15. Fullback
+  { name:'Hugo Keenan',         pos:15, rating:94 },
+  { name:'Jamie Osborne',       pos:15, rating:85 },
+  { name:"Jimmy O'Brien",       pos:15, rating:76 },
+  { name:'Mike Haley',          pos:15, rating:70 },
+  { name:'Mike Lowry',          pos:15, rating:68 },
+];
+
+// Secondary positions — player appears in a second position at a different rating
+const SECONDARY = [
+  { name:'Andrew Porter',       pos:3,  rating:80 },
+  { name:'Tadhg Beirne',        pos:6,  rating:96 },
+  { name:'Ryan Baird',          pos:5,  rating:85 },
+  { name:'Caelan Doris',        pos:7,  rating:94 },
+  { name:'Caelan Doris',        pos:6,  rating:96 },
+  { name:'Jamison Gibson-Park', pos:14, rating:85 },
+  { name:'Jack Crowley',        pos:15, rating:80 },
+  { name:'Garry Ringrose',      pos:14, rating:87 },
+  { name:'Hugo Keenan',         pos:14, rating:87 },
+  { name:'Paddy McCarthy',      pos:3,  rating:80 },
+  { name:'Tom Ahern',           pos:6,  rating:77 },
+  { name:'Cian Prendergast',    pos:8,  rating:79 },
+  { name:'James Ryan',          pos:5,  rating:90 },
+  { name:'Cian Prendergast',    pos:5,  rating:77 },
+  { name:'Nick Timoney',        pos:8,  rating:81 },
+  { name:'Jack Conan',          pos:6,  rating:92 },
+  { name:'Jacob Stockdale',     pos:15, rating:78 },
+  { name:'Bundee Aki',          pos:13, rating:80 },
+  { name:'Jamie Osborne',       pos:14, rating:78 },
+  { name:'Jamie Osborne',       pos:12, rating:81 },
+  { name:'Cormac Izuchukwu',   pos:5,  rating:77 },
+  { name:'Ciarán Frawley',      pos:12, rating:78 },
+  { name:'Ciarán Frawley',      pos:15, rating:78 },
+  { name:'Robbie Henshaw',      pos:13, rating:80 },
+  { name:'Mack Hansen',         pos:15, rating:88 },
+  { name:"Jimmy O'Brien",       pos:14, rating:76 },
+  { name:"Jimmy O'Brien",       pos:13, rating:72 },
+  { name:'Max Deegan',          pos:8,  rating:77 },
+  { name:'Josh Murphy *',       pos:6,  rating:60 },
+  { name:'Charlie Tector',      pos:10, rating:60 },
+  { name:'Jordan Larmour',      pos:15, rating:75 },
+  { name:'Mike Lowry',          pos:10, rating:68 },
+  { name:"Tom O'Toole",         pos:3,  rating:80 },
+  { name:"Jack O'Donoghue",     pos:7,  rating:68 },
+].map(p => ({ ...p, secondary: true }));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const WEIGHT_SETS = {
+  1: [1.00],
+  2: [0.65, 0.35],
+  3: [0.50, 0.30, 0.20],
+  4: [0.40, 0.28, 0.20, 0.12],
+  5: [0.35, 0.25, 0.20, 0.13, 0.07],
+  6: [0.32, 0.24, 0.18, 0.13, 0.08, 0.05],
+  7: [0.30, 0.23, 0.17, 0.12, 0.08, 0.06, 0.04],
+};
+
+function depthScore(players) {
+  const sorted = [...players].sort((a, b) => b.rating - a.rating);
+  const n = Math.min(sorted.length, 7);
+  const w = WEIGHT_SETS[n];
+  return Math.round(sorted.reduce((s, p, i) => s + p.rating * (w[i] || 0), 0));
+}
+
+function ratingColor(r) {
+  if (r >= 90) return '#047857';
+  if (r >= 80) return '#16A34A';
+  if (r >= 70) return '#CA8A04';
+  if (r >= 60) return '#D97706';
+  return '#DC2626';
+}
+
+function depthColor(s) {
+  if (s >= 85) return '#047857';
+  if (s >= 80) return '#059669';
+  if (s >= 75) return '#16A34A';
+  if (s >= 70) return '#CA8A04';
+  if (s >= 65) return '#D97706';
+  return '#DC2626';
+}
+
+function depthLabel(s) {
+  if (s >= 85) return 'Elite';
+  if (s >= 80) return 'Excellent';
+  if (s >= 75) return 'Strong';
+  if (s >= 70) return 'Solid';
+  if (s >= 65) return 'Thin';
+  return 'Vulnerable';
+}
+
+function tierBadge(r) {
+  if (r >= 90) return ['World Class', 't-wc'];
+  if (r >= 80) return ['International', 't-int'];
+  if (r >= 70) return ['Squad', 't-sq'];
+  if (r >= 60) return ['Fringe', 't-fr'];
+  return ['Emerging', 't-em'];
+}
+
+function rankClass(i) {
+  return ['r1','r2','r3','ro'][Math.min(i, 3)];
+}
+
+// ─── Build lookup ──────────────────────────────────────────────────────────────
+
+const ALL = [
+  ...PLAYERS.map(p => ({ ...p, secondary: false })),
+  ...SECONDARY,
+];
+
+const byPos = {};
+POSITIONS.forEach(p => {
+  byPos[p.id] = ALL.filter(pl => pl.pos === p.id)
+                   .sort((a, b) => b.rating - a.rating);
+});
+
+// ─── Header stats ──────────────────────────────────────────────────────────────
+
+const totalPlayers  = PLAYERS.length;
+const secPositions  = SECONDARY.length;
+const avgRating     = Math.round(PLAYERS.reduce((s, p) => s + p.rating, 0) / totalPlayers);
+const worldClass    = PLAYERS.filter(p => p.rating >= 90).length;
+const strongPositions = POSITIONS.filter(p => depthScore(byPos[p.id]) >= 80).length;
+
+document.getElementById('hdrStats').innerHTML = `
+  <div class="hdr-stat"><div class="hdr-stat-val">${totalPlayers}</div><div class="hdr-stat-lbl">Players Assessed</div></div>
+  <div class="hdr-stat"><div class="hdr-stat-val">${avgRating}</div><div class="hdr-stat-lbl">Avg Player Rating</div></div>
+  <div class="hdr-stat"><div class="hdr-stat-val">${worldClass}</div><div class="hdr-stat-lbl">World Class (90+)</div></div>
+  <div class="hdr-stat"><div class="hdr-stat-val">${secPositions}</div><div class="hdr-stat-lbl">2nd Position Entries</div></div>
+  <div class="hdr-stat"><div class="hdr-stat-val">${strongPositions}/15</div><div class="hdr-stat-lbl">Strong Positions (80+)</div></div>
+`;
+
+// ─── Overview grid ─────────────────────────────────────────────────────────────
+
+document.getElementById('ovGrid').innerHTML = POSITIONS.map(p => {
+  const players = byPos[p.id];
+  const ds  = depthScore(players);
+  const col = depthColor(ds);
+  const lbl = depthLabel(ds);
+  return `
+    <a class="ov-card" href="#pos-${p.id}">
+      <div class="ov-pos-num">Position ${p.num}</div>
+      <div class="ov-pos-name">${p.name}</div>
+      <div class="ov-bar-row">
+        <div class="ov-bar-bg">
+          <div class="ov-bar-fill" style="width:${ds}%;background:${col}"></div>
+        </div>
+        <div class="ov-score" style="color:${col}">${ds}</div>
+      </div>
+      <div class="ov-meta">
+        <span class="ov-label" style="color:${col}">${lbl}</span>
+        <span>${players.length} players</span>
+      </div>
+    </a>
+  `;
+}).join('');
+
+// ─── Position table card ───────────────────────────────────────────────────────
+
+function renderPosCard(p) {
+  const players = byPos[p.id];
+  const ds  = depthScore(players);
+  const col = depthColor(ds);
+  const lbl = depthLabel(ds);
+
+  const rows = players.map((pl, i) => {
+    const rc = ratingColor(pl.rating);
+    const [tLbl, tCls] = tierBadge(pl.rating);
+    const secMark = pl.secondary ? `<span class="sec-badge">2nd Pos</span>` : '';
+    const trClass = pl.secondary ? ' class="sec-row"' : '';
+    return `
+      <tr${trClass}>
+        <td class="rank-cell">
+          <span class="rank-badge ${rankClass(i)}">${i + 1}</span>
+        </td>
+        <td class="name-cell">
+          <span class="name-txt">${pl.name}</span>
+          <span class="tier-badge ${tCls}">${tLbl}</span>${secMark}
+        </td>
+        <td class="rating-cell">
+          <div class="rating-row">
+            <div class="rating-bar-bg">
+              <div class="rating-bar-fill" style="width:${pl.rating}%;background:${rc}"></div>
+            </div>
+            <div class="rating-num" style="color:${rc}">${pl.rating}</div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="pos-card" id="pos-${p.id}">
+      <div class="pos-card-hdr">
+        <div>
+          <div class="pos-card-num">Position ${p.num}</div>
+          <div class="pos-card-title">${p.name}</div>
+        </div>
+        <div class="pos-depth-row">
+          <div class="pos-depth-bar">
+            <div class="pos-depth-fill" style="width:${ds}%;background:${col}"></div>
+          </div>
+          <div class="pos-depth-score">${ds}</div>
+          <div class="pos-depth-lbl">${lbl}</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:42px">#</th>
+            <th>Player</th>
+            <th class="r">Rating</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+document.getElementById('fwdGrid').innerHTML =
+  POSITIONS.filter(p => p.group === 'Forwards').map(renderPosCard).join('');
+
+document.getElementById('bckGrid').innerHTML =
+  POSITIONS.filter(p => p.group === 'Backs').map(renderPosCard).join('');
+</script>
+</body>
+</html>
