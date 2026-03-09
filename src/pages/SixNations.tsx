@@ -14,7 +14,8 @@ import { NationalSquadSelector } from '@/components/sixnations/NationalSquadSele
 import { CallUpPanel } from '@/components/sixnations/CallUpPanel';
 import { NationalTacticsPanel } from '@/components/sixnations/NationalTacticsPanel';
 import { NationalTrainingPanel } from '@/components/sixnations/NationalTrainingPanel';
-import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag, Swords, Dumbbell } from 'lucide-react';
+import IrelandSquadDepth from '@/components/sixnations/IrelandSquadDepth';
+import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag, Swords, Dumbbell, BarChart3 } from 'lucide-react';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
