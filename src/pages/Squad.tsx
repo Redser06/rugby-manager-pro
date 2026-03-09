@@ -315,7 +315,6 @@ export default function Squad() {
         </TabsList>
 
         <TabsContent value="roster" className="space-y-6 mt-4">
-      </div>
 
       {/* Salary Cap & Wage Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
