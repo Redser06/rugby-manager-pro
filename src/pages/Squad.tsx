@@ -14,10 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users } from 'lucide-react';
 import { ContractManagementDialog } from '@/components/squad/ContractManagementDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
 import { SquadImportDialog } from '@/components/squad/SquadImportDialog';
+import ClubSquadDepth from '@/components/squad/ClubSquadDepth';
 import { useToast } from '@/hooks/use-toast';
 
 const POSITION_GROUPS = {
@@ -291,12 +293,28 @@ export default function Squad() {
           <h1 className="text-3xl font-bold text-foreground">Squad</h1>
           <p className="text-muted-foreground">{team.players.length} players • {expiringCount} contracts expiring</p>
         </div>
-        <SquadImportDialog 
-          onImport={handleSquadImport} 
-          currentSquadSize={team.players.length}
-          currentPlayers={team.players}
-        />
+        <div className="flex items-center gap-2">
+          <SquadImportDialog 
+            onImport={handleSquadImport} 
+            currentSquadSize={team.players.length}
+            currentPlayers={team.players}
+          />
+        </div>
       </div>
+
+      <Tabs defaultValue="roster">
+        <TabsList>
+          <TabsTrigger value="roster" className="gap-1">
+            <Users className="h-4 w-4" />
+            Roster
+          </TabsTrigger>
+          <TabsTrigger value="depth" className="gap-1">
+            <BarChart3 className="h-4 w-4" />
+            Depth Analysis
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="roster" className="space-y-6 mt-4">
 
       {/* Salary Cap & Wage Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -456,6 +474,13 @@ export default function Squad() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+        </TabsContent>
+
+        <TabsContent value="depth" className="mt-4">
+          <ClubSquadDepth players={team.players} teamName={team.name} />
+        </TabsContent>
+      </Tabs>
 
       {selectedPlayer && (
         <PlayerDetailDialog 

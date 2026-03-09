@@ -14,7 +14,8 @@ import { NationalSquadSelector } from '@/components/sixnations/NationalSquadSele
 import { CallUpPanel } from '@/components/sixnations/CallUpPanel';
 import { NationalTacticsPanel } from '@/components/sixnations/NationalTacticsPanel';
 import { NationalTrainingPanel } from '@/components/sixnations/NationalTrainingPanel';
-import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag, Swords, Dumbbell } from 'lucide-react';
+import IrelandSquadDepth from '@/components/sixnations/IrelandSquadDepth';
+import { Trophy, Shield, Users, Calendar, Play, AlertTriangle, Flag, Swords, Dumbbell, BarChart3 } from 'lucide-react';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
@@ -232,6 +233,12 @@ export default function SixNations() {
                 <Dumbbell className="h-4 w-4" />
                 Training
               </TabsTrigger>
+              {sixNationsState.userNation === 'Ireland' && (
+                <TabsTrigger value="depth" className="gap-1">
+                  <BarChart3 className="h-4 w-4" />
+                  Depth Analysis
+                </TabsTrigger>
+              )}
             </>
           )}
           {!isNationalCoach && (
@@ -263,6 +270,12 @@ export default function SixNations() {
             <TabsContent value="training">
               <NationalTrainingPanel nation={sixNationsState.userNation!} />
             </TabsContent>
+
+            {sixNationsState.userNation === 'Ireland' && (
+              <TabsContent value="depth">
+                <IrelandSquadDepth />
+              </TabsContent>
+            )}
           </>
         )}
 
