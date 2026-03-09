@@ -1,0 +1,384 @@
+/* ============================================================
+   Ireland Rugby — Squad Depth Analysis
+   Standalone stylesheet (scoped to .ireland-depth)
+   ============================================================ */
+
+/* ── Design tokens ─────────────────────────────────────────── */
+.ireland-depth {
+  --g900: #0D3320;
+  --g800: #1A4D2E;
+  --g700: #006837;
+  --g600: #1B7A3F;
+  --g500: #2D9C55;
+  --g100: #E8F5EE;
+  --gold:   #C8A850;
+  --gold-l: #F5D878;
+  --w:    #FFFFFF;
+  --s50:  #F9FAFB;
+  --s100: #F3F4F6;
+  --s200: #E5E7EB;
+  --s300: #D1D5DB;
+  --s500: #6B7280;
+  --s700: #374151;
+  --s900: #111827;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--s900);
+  line-height: 1.5;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.ireland-depth .hdr {
+  background: linear-gradient(135deg, var(--g900) 0%, var(--g700) 55%, var(--g800) 100%);
+  padding: 52px 24px 44px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+.ireland-depth .hdr::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent, transparent 40px,
+    rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 80px
+  );
+}
+.ireland-depth .hdr-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  color: var(--gold-l);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.18);
+  margin-bottom: 20px;
+}
+.ireland-depth .hdr-shamrock {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+.ireland-depth .hdr h1 {
+  color: #fff;
+  font-size: clamp(26px, 4.5vw, 50px);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+.ireland-depth .hdr h1 em { color: var(--gold-l); font-style: normal; }
+.ireland-depth .hdr-sub {
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  margin-top: 10px;
+  font-weight: 400;
+}
+.ireland-depth .hdr-stats {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+.ireland-depth .hdr-stat {
+  text-align: center;
+  padding: 0 28px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+}
+.ireland-depth .hdr-stat:last-child { border-right: none; }
+.ireland-depth .hdr-stat-val {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--gold-l);
+  line-height: 1;
+}
+.ireland-depth .hdr-stat-lbl {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* ── Layout wrapper ────────────────────────────────────────── */
+.ireland-depth .wrap {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Legend ────────────────────────────────────────────────── */
+.ireland-depth .legend {
+  background: var(--w);
+  border-radius: 12px;
+  border: 1px solid var(--s200);
+  padding: 14px 20px;
+  margin: 28px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ireland-depth .legend-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--s500);
+  margin-right: 4px;
+}
+.ireland-depth .legend-items {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ireland-depth .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--s700);
+}
+.ireland-depth .legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Section labels ────────────────────────────────────────── */
+.ireland-depth .sec-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--s500);
+  margin-bottom: 16px;
+}
+
+/* ── Overview grid ─────────────────────────────────────────── */
+.ireland-depth .ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.ireland-depth .ov-card {
+  background: var(--w);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--s200);
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  text-decoration: none;
+  display: block;
+}
+.ireland-depth .ov-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.10);
+  border-color: var(--g500);
+}
+.ireland-depth .ov-pos-num {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--s500);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.ireland-depth .ov-pos-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--s900);
+  margin: 4px 0 14px;
+  line-height: 1.3;
+  min-height: 34px;
+}
+.ireland-depth .ov-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ireland-depth .ov-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--s200);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ireland-depth .ov-bar-fill { height: 100%; border-radius: 3px; }
+.ireland-depth .ov-score {
+  font-size: 17px;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: right;
+}
+.ireland-depth .ov-meta {
+  font-size: 10px;
+  color: var(--s500);
+  margin-top: 7px;
+  display: flex;
+  justify-content: space-between;
+}
+.ireland-depth .ov-label { font-size: 10px; font-weight: 700; }
+
+/* ── Group headings ────────────────────────────────────────── */
+.ireland-depth .grp-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 0 16px;
+}
+.ireland-depth .grp-title { font-size: 22px; font-weight: 800; color: var(--s900); }
+.ireland-depth .grp-pill {
+  background: var(--g100);
+  color: var(--g700);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── Position card grid ────────────────────────────────────── */
+.ireland-depth .pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(580px, 1fr));
+  gap: 18px;
+  padding-bottom: 12px;
+}
+@media (max-width: 680px) {
+  .ireland-depth .pos-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Individual position card ──────────────────────────────── */
+.ireland-depth .pos-card {
+  background: var(--w);
+  border-radius: 16px;
+  border: 1px solid var(--s200);
+  overflow: hidden;
+}
+.ireland-depth .pos-card-hdr {
+  background: linear-gradient(135deg, var(--g800), var(--g700));
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ireland-depth .pos-card-title { color: #fff; font-weight: 700; font-size: 14px; }
+.ireland-depth .pos-card-num   { color: rgba(255,255,255,0.55); font-size: 12px; }
+.ireland-depth .pos-depth-row  { display: flex; align-items: center; gap: 8px; }
+.ireland-depth .pos-depth-bar  {
+  width: 72px; height: 5px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px; overflow: hidden;
+}
+.ireland-depth .pos-depth-fill { height: 100%; border-radius: 3px; }
+.ireland-depth .pos-depth-score {
+  color: #fff; font-size: 13px; font-weight: 800; min-width: 24px;
+}
+.ireland-depth .pos-depth-lbl {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 10px;
+  color: var(--g900); background: var(--gold-l);
+}
+
+/* ── Table ─────────────────────────────────────────────────── */
+.ireland-depth table { width: 100%; border-collapse: collapse; }
+
+.ireland-depth thead tr  { background: var(--s50); border-bottom: 2px solid var(--s200); }
+.ireland-depth thead th  {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--s500);
+}
+.ireland-depth thead th.r { text-align: right; }
+
+.ireland-depth tbody tr {
+  border-bottom: 1px solid var(--s100);
+  transition: background 0.12s;
+}
+.ireland-depth tbody tr:last-child { border-bottom: none; }
+.ireland-depth tbody tr:hover      { background: var(--s50); }
+
+/* Secondary-position rows */
+.ireland-depth tbody tr.sec-row       { background: #FDFCFF; }
+.ireland-depth tbody tr.sec-row:hover { background: #F5F0FF; }
+
+/* ── Table cells ───────────────────────────────────────────── */
+.ireland-depth .rank-cell {
+  padding: 12px 8px 12px 14px;
+  width: 42px;
+}
+.ireland-depth .rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+}
+.ireland-depth .r1 { background: #FEF08A; color: #713F12; }
+.ireland-depth .r2 { background: var(--s200); color: var(--s700); }
+.ireland-depth .r3 { background: #FDDCB5; color: #7C2D12; }
+.ireland-depth .ro { background: var(--s100); color: var(--s500); }
+
+.ireland-depth .name-cell { padding: 12px 8px; }
+.ireland-depth .name-txt  { font-size: 14px; font-weight: 600; color: var(--s900); }
+
+/* ── Tier badges ───────────────────────────────────────────── */
+.ireland-depth .tier-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 6px; border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle; letter-spacing: 0.3px;
+}
+.ireland-depth .t-wc  { background: #FEF9C3; color: #713F12; border: 1px solid #FDE047; }
+.ireland-depth .t-int { background: var(--g100); color: var(--g700); border: 1px solid #86EFAC; }
+.ireland-depth .t-sq  { background: #FFF7ED; color: #7C2D12; border: 1px solid #FED7AA; }
+.ireland-depth .t-fr  { background: #FEF2F2; color: #7F1D1D; border: 1px solid #FECACA; }
+.ireland-depth .t-em  { background: var(--s100); color: var(--s700); border: 1px solid var(--s300); }
+
+/* ── Secondary-position badge ──────────────────────────────── */
+.ireland-depth .sec-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 5px; border-radius: 4px; margin-left: 5px;
+  background: #EDE9FE; color: #5B21B6; border: 1px solid #C4B5FD;
+  vertical-align: middle; letter-spacing: 0.3px;
+}
+
+/* ── Rating bar ────────────────────────────────────────────── */
+.ireland-depth .rating-cell { padding: 12px 14px; text-align: right; white-space: nowrap; }
+.ireland-depth .rating-row  {
+  display: flex; align-items: center;
+  justify-content: flex-end; gap: 8px;
+}
+.ireland-depth .rating-bar-bg {
+  width: 90px; height: 7px;
+  background: var(--s200); border-radius: 4px; overflow: hidden;
+}
+.ireland-depth .rating-bar-fill { height: 100%; border-radius: 4px; }
+.ireland-depth .rating-num {
+  font-size: 14px; font-weight: 800;
+  min-width: 26px; text-align: right;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.ireland-depth .depth-footer {
+  background: var(--g900);
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  padding: 24px;
+  font-size: 11px;
+  margin-top: 60px;
+  line-height: 1.7;
+  border-radius: 0 0 12px 12px;
+}
