@@ -233,6 +233,12 @@ export default function SixNations() {
                 <Dumbbell className="h-4 w-4" />
                 Training
               </TabsTrigger>
+              {sixNationsState.userNation === 'Ireland' && (
+                <TabsTrigger value="depth" className="gap-1">
+                  <BarChart3 className="h-4 w-4" />
+                  Depth Analysis
+                </TabsTrigger>
+              )}
             </>
           )}
           {!isNationalCoach && (
