@@ -293,11 +293,28 @@ export default function Squad() {
           <h1 className="text-3xl font-bold text-foreground">Squad</h1>
           <p className="text-muted-foreground">{team.players.length} players • {expiringCount} contracts expiring</p>
         </div>
-        <SquadImportDialog 
-          onImport={handleSquadImport} 
-          currentSquadSize={team.players.length}
-          currentPlayers={team.players}
-        />
+        <div className="flex items-center gap-2">
+          <SquadImportDialog 
+            onImport={handleSquadImport} 
+            currentSquadSize={team.players.length}
+            currentPlayers={team.players}
+          />
+        </div>
+      </div>
+
+      <Tabs defaultValue="roster">
+        <TabsList>
+          <TabsTrigger value="roster" className="gap-1">
+            <Users className="h-4 w-4" />
+            Roster
+          </TabsTrigger>
+          <TabsTrigger value="depth" className="gap-1">
+            <BarChart3 className="h-4 w-4" />
+            Depth Analysis
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="roster" className="space-y-6 mt-4">
       </div>
 
       {/* Salary Cap & Wage Summary */}
