@@ -270,6 +270,12 @@ export default function SixNations() {
             <TabsContent value="training">
               <NationalTrainingPanel nation={sixNationsState.userNation!} />
             </TabsContent>
+
+            {sixNationsState.userNation === 'Ireland' && (
+              <TabsContent value="depth">
+                <IrelandSquadDepth />
+              </TabsContent>
+            )}
           </>
         )}
 

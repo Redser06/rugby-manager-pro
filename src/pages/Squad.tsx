@@ -14,10 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users } from 'lucide-react';
 import { ContractManagementDialog } from '@/components/squad/ContractManagementDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
 import { SquadImportDialog } from '@/components/squad/SquadImportDialog';
+import ClubSquadDepth from '@/components/squad/ClubSquadDepth';
 import { useToast } from '@/hooks/use-toast';
 
 const POSITION_GROUPS = {
