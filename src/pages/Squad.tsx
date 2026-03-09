@@ -476,6 +476,13 @@ export default function Squad() {
         </CardContent>
       </Card>
 
+        </TabsContent>
+
+        <TabsContent value="depth" className="mt-4">
+          <ClubSquadDepth players={team.players} teamName={team.name} />
+        </TabsContent>
+      </Tabs>
+
       {selectedPlayer && (
         <PlayerDetailDialog 
           player={selectedPlayer} 
