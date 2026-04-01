@@ -809,23 +809,19 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
     return Math.min(10, Math.max(1, Math.round(rating * 10) / 10));
   };
 
-  const homePlayerRatings: PlayerMatchRating[] = homeTeam.players.slice(0, 23).map(p => {
+  const mapPerf = (p: Player) => {
     const perf = playerPerformance[p.id] || { tackles: 0, missedTackles: 0, carries: 0, metres: 0, offloads: 0, turnoversWon: 0, penaltiesConceded: 0, tries: 0, conversions: 0, penaltyGoals: 0, minutesPlayed: 0 };
     return {
       playerId: p.id, playerName: playerName(p), positionNumber: p.positionNumber,
       minutesPlayed: perf.minutesPlayed, rating: calculateRating(perf),
-      ...perf, isMotm: false,
+      tackles: perf.tackles, missedTackles: perf.missedTackles, carries: perf.carries,
+      metresGained: perf.metres, offloads: perf.offloads, turnoversWon: perf.turnoversWon,
+      penaltiesConceded: perf.penaltiesConceded, triesScored: perf.tries, isMotm: false,
     };
-  });
+  };
 
-  const awayPlayerRatings: PlayerMatchRating[] = awayTeam.players.slice(0, 23).map(p => {
-    const perf = playerPerformance[p.id] || { tackles: 0, missedTackles: 0, carries: 0, metres: 0, offloads: 0, turnoversWon: 0, penaltiesConceded: 0, tries: 0, conversions: 0, penaltyGoals: 0, minutesPlayed: 0 };
-    return {
-      playerId: p.id, playerName: playerName(p), positionNumber: p.positionNumber,
-      minutesPlayed: perf.minutesPlayed, rating: calculateRating(perf),
-      ...perf, isMotm: false,
-    };
-  });
+  const homePlayerRatings: PlayerMatchRating[] = homeTeam.players.slice(0, 23).map(mapPerf);
+  const awayPlayerRatings: PlayerMatchRating[] = awayTeam.players.slice(0, 23).map(mapPerf);
 
   // MOTM
   const allRatings = [...homePlayerRatings, ...awayPlayerRatings];
