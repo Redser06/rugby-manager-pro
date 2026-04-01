@@ -3,7 +3,7 @@ import {
   EnhancedMatch, EnhancedMatchEvent, EnhancedEventType,
   MatchStats, createEmptyStats, PlayerMatchState, PlayerMatchRating,
   Referee, REFEREE_POOL, MatchWeather, getWeatherEffects,
-  TeamDiscipline, SubstitutionPlan, BenchSplit,
+  TeamDiscipline, SubstitutionPlan, SubstitutionRule, BenchSplit,
   COMMENTARY, TMOReview,
 } from '@/types/matchEngine';
 import { StaffBonuses } from '@/types/staff';
