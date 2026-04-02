@@ -173,8 +173,40 @@ export interface PlayerChatResponse {
   };
 }
 
+// Position-to-archetype mapping
+const POSITION_ARCHETYPES: Record<string, PlayerArchetype[]> = {
+  'Loosehead Prop': ['scrummager', 'ball_carrier', 'mobile'],
+  'Hooker': ['set_piece', 'link_player', 'ball_carrier'],
+  'Tighthead Prop': ['scrummager', 'ball_carrier', 'mobile'],
+  'Lock': ['lineout_specialist', 'enforcer', 'ball_player'],
+  'Blindside Flanker': ['jackal', 'carrier', 'link'],
+  'Openside Flanker': ['jackal', 'carrier', 'link'],
+  'Number 8': ['power', 'ball_player', 'defensive'],
+  'Scrum Half': ['sniper', 'controller', 'box_kicker'],
+  'Fly Half': ['playmaker', 'runner', 'dual_threat'],
+  'Inside Centre': ['crash_ball', 'distributor', 'outside_break'],
+  'Outside Centre': ['crash_ball', 'distributor', 'outside_break'],
+  'Left Wing': ['finisher', 'counter_attacker', 'aerial_wing'],
+  'Right Wing': ['finisher', 'counter_attacker', 'aerial_wing'],
+  'Fullback': ['playmaker_15', 'counter_attacker_15', 'safety_first'],
+};
+
+export function assignArchetype(position: string): PlayerArchetype {
+  const archetypes = POSITION_ARCHETYPES[position];
+  if (!archetypes) {
+    // Fallback: try matching partial position names
+    for (const [key, vals] of Object.entries(POSITION_ARCHETYPES)) {
+      if (position.toLowerCase().includes(key.toLowerCase().split(' ')[0])) {
+        return vals[Math.floor(Math.random() * vals.length)];
+      }
+    }
+    return 'ball_carrier';
+  }
+  return archetypes[Math.floor(Math.random() * archetypes.length)];
+}
+
 // Default extended values for generating new players
-export function generatePlayerExtended(age: number, overall: number, nationality: string): Partial<PlayerExtended> {
+export function generatePlayerExtended(age: number, overall: number, nationality: string, position?: string): Partial<PlayerExtended> {
   const isYoung = age < 24;
   const isVeteran = age > 31;
   
@@ -186,6 +218,8 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     leadership: isVeteran ? 50 + Math.floor(Math.random() * 40) : 10 + Math.floor(Math.random() * 30),
     bigGamePlayer: Math.random() < 0.15,
     
+    archetype: position ? assignArchetype(position) : 'ball_carrier',
+    
     potential: isYoung ? overall + Math.floor(Math.random() * 25) : overall + Math.floor(Math.random() * 5),
     potentialRevealed: false,
     developmentRate: isYoung ? 0.8 + Math.random() * 1.2 : 0.3 + Math.random() * 0.5,
@@ -196,7 +230,7 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     seasonTries: 0,
     milestones: [],
     
-    chronicInjuries: [],
+    chronicInjuries: isVeteran && Math.random() < 0.4 ? [generateChronicInjury(age)] : [],
     injuryProneness: 10 + Math.floor(Math.random() * 40) + (isVeteran ? 20 : 0),
     
     formHistory: [],
@@ -218,5 +252,17 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     needsRest: false,
     restWeeksRequired: 0,
     matchesSinceRest: 0,
+  };
+}
+
+function generateChronicInjury(age: number): ChronicInjury {
+  const types: ChronicInjury['type'][] = ['knee', 'shoulder', 'back', 'ankle', 'hamstring', 'concussion_history'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const severity: ChronicInjury['severity'] = age > 34 ? 'moderate' : Math.random() < 0.3 ? 'moderate' : 'mild';
+  return {
+    type,
+    severity,
+    reinjuryRisk: severity === 'severe' ? 30 + Math.floor(Math.random() * 30) : severity === 'moderate' ? 15 + Math.floor(Math.random() * 20) : 5 + Math.floor(Math.random() * 15),
+    managementStrategy: 'none',
   };
 }
