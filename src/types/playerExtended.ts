@@ -267,9 +267,3 @@ function generateChronicInjury(age: number): ChronicInjury {
     managementStrategy: 'none',
   };
 }
-    type,
-    severity,
-    reinjuryRisk: severity === 'severe' ? 30 + Math.floor(Math.random() * 30) : severity === 'moderate' ? 15 + Math.floor(Math.random() * 20) : 5 + Math.floor(Math.random() * 15),
-    managementStrategy: 'none',
-  };
-}
