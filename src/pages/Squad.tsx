@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { useTransfer } from '@/contexts/TransferContext';
 import { Player, PositionNumber } from '@/types/game';
