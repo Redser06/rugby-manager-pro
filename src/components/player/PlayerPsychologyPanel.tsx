@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Player } from '@/types/game';
-import { PlayerExtended, PlayerChat, ARCHETYPE_NAMES } from '@/types/playerExtended';
+import { PlayerExtended, PlayerChat, ARCHETYPE_NAMES, InjuryRehab, ChronicInjury } from '@/types/playerExtended';
 import { getOverallMorale, getMoraleLabel, getMoraleColor, generatePlayerChat } from '@/engine/playerPsychology';
+import { applyRehabStrategy, chooseSurgery, shouldRestForChronic, updateChronicManagement } from '@/engine/injuryRehab';
+import { shouldTriggerRetirementChat, generateRetirementChat, calculateCoachConversion, generateTestimonialEvent, RetirementChat, RetirementDecision } from '@/engine/retirement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,9 +11,10 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Brain, Heart, Flame, Shield, MessageSquare, Trophy, TrendingUp, TrendingDown,
-  Star, AlertTriangle, Users, Zap, Clock
+  Star, AlertTriangle, Users, Zap, Clock, Activity, Stethoscope, Sunset, UserCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
