@@ -531,6 +531,15 @@ export default function Squad() {
         <TabsContent value="depth" className="mt-4">
           <ClubSquadDepth players={team.players} teamName={team.name} />
         </TabsContent>
+
+        <TabsContent value="psychology" className="mt-4">
+          <PlayerPsychologyPanel
+            players={team.players}
+            playerExtendedData={playerExtendedData}
+            onUpdateExtended={handleUpdateExtended}
+            onSetMentor={handleSetMentor}
+          />
+        </TabsContent>
       </Tabs>
 
       {selectedPlayer && (
