@@ -258,8 +258,15 @@ export function generatePlayerExtended(age: number, overall: number, nationality
 function generateChronicInjury(age: number): ChronicInjury {
   const types: ChronicInjury['type'][] = ['knee', 'shoulder', 'back', 'ankle', 'hamstring', 'concussion_history'];
   const type = types[Math.floor(Math.random() * types.length)];
-  const severity: ChronicInjury['severity'] = age > 34 ? 'moderate' : Math.random() < 0.3 ? 'moderate' : 'mild';
+  const severities: ChronicInjury['severity'][] = age > 34 ? ['moderate', 'severe'] : ['mild', 'moderate'];
+  const severity = severities[Math.floor(Math.random() * severities.length)];
   return {
+    type,
+    severity,
+    reinjuryRisk: severity === 'severe' ? 30 + Math.floor(Math.random() * 30) : severity === 'moderate' ? 15 + Math.floor(Math.random() * 20) : 5 + Math.floor(Math.random() * 15),
+    managementStrategy: 'none',
+  };
+}
     type,
     severity,
     reinjuryRisk: severity === 'severe' ? 30 + Math.floor(Math.random() * 30) : severity === 'moderate' ? 15 + Math.floor(Math.random() * 20) : 5 + Math.floor(Math.random() * 15),
