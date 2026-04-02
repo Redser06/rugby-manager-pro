@@ -232,7 +232,7 @@ export default function Squad() {
     const data: Record<string, PlayerExtended> = {};
     if (team) {
       team.players.forEach(p => {
-        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality, p.position) as PlayerExtended;
       });
     }
     return data;
@@ -250,7 +250,7 @@ export default function Squad() {
     let changed = false;
     team.players.forEach(p => {
       if (!updated[p.id]) {
-        updated[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+        updated[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality, p.position) as PlayerExtended;
         changed = true;
       }
     });

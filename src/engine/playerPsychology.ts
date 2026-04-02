@@ -95,7 +95,7 @@ export function weeklyDevelopment(ext: PlayerExtended, age: number, trainingInte
 }
 
 // ---- Milestones ----
-export function checkMilestones(ext: PlayerExtended, player: Player, season: number, week: number): PlayerExtended {
+export function checkMilestones(ext: PlayerExtended, player: Player, season: number, week: number, clubTryRecord?: number): PlayerExtended {
   const milestones = [...ext.milestones];
   const hasMilestone = (type: PlayerMilestone['type']) => milestones.some(m => m.type === type);
 
@@ -103,14 +103,14 @@ export function checkMilestones(ext: PlayerExtended, player: Player, season: num
     milestones.push({
       type: '50_caps',
       achievedAt: { season, week },
-      description: `${player.firstName} ${player.lastName} made their 50th appearance!`
+      description: `${player.firstName} ${player.lastName} made their 50th appearance! Confidence boost.`
     });
   }
   if (ext.caps >= 100 && !hasMilestone('100_caps')) {
     milestones.push({
       type: '100_caps',
       achievedAt: { season, week },
-      description: `${player.firstName} ${player.lastName} reached 100 caps! A true club legend.`
+      description: `${player.firstName} ${player.lastName} reached 100 caps! A true club legend — mentoring bonus unlocked.`
     });
   }
   if (ext.caps >= 150 && !hasMilestone('150_caps')) {
@@ -127,8 +127,38 @@ export function checkMilestones(ext: PlayerExtended, player: Player, season: num
       description: `${player.firstName} ${player.lastName} earned their first international cap!`
     });
   }
+  
+  // Try record milestone
+  if (clubTryRecord && ext.totalTries > clubTryRecord && !hasMilestone('try_record')) {
+    milestones.push({
+      type: 'try_record',
+      achievedAt: { season, week },
+      description: `${player.firstName} ${player.lastName} broke the club try-scoring record with ${ext.totalTries} tries!`
+    });
+  }
+  
+  // Testimonial for 150+ cap veterans
+  if (ext.caps >= 150 && player.age >= 33 && !hasMilestone('testimonial')) {
+    milestones.push({
+      type: 'testimonial',
+      achievedAt: { season, week },
+      description: `${player.firstName} ${player.lastName} has earned a testimonial match — a true servant of the club.`
+    });
+  }
 
-  return { ...ext, milestones };
+  // Apply milestone confidence boosts
+  const newMilestones = milestones.filter(m => !ext.milestones.some(em => em.type === m.type));
+  let confidence = ext.confidence;
+  let leadership = ext.leadership;
+  
+  for (const m of newMilestones) {
+    if (m.type === '50_caps') confidence = Math.min(100, confidence + 10);
+    if (m.type === '100_caps') { confidence = Math.min(100, confidence + 15); leadership = Math.min(100, leadership + 10); }
+    if (m.type === '150_caps') leadership = Math.min(100, leadership + 5);
+    if (m.type === 'try_record') confidence = Math.min(100, confidence + 12);
+  }
+
+  return { ...ext, milestones, confidence, leadership };
 }
 
 // ---- Chat Generation ----
