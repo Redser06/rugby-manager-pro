@@ -87,7 +87,7 @@ export default function PlayerPsychologyPanel({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="morale">
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
+        <TabsList className="grid grid-cols-6 w-full max-w-2xl">
           <TabsTrigger value="morale" className="gap-1 text-xs">
             <Heart className="h-3 w-3" /> Morale
           </TabsTrigger>
@@ -99,6 +99,12 @@ export default function PlayerPsychologyPanel({
           </TabsTrigger>
           <TabsTrigger value="milestones" className="gap-1 text-xs">
             <Trophy className="h-3 w-3" /> Milestones
+          </TabsTrigger>
+          <TabsTrigger value="injuries" className="gap-1 text-xs">
+            <Stethoscope className="h-3 w-3" /> Injuries
+          </TabsTrigger>
+          <TabsTrigger value="retirement" className="gap-1 text-xs">
+            <Sunset className="h-3 w-3" /> Twilight
           </TabsTrigger>
         </TabsList>
 
