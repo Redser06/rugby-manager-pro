@@ -15,11 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users } from 'lucide-react';
+import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users, Brain } from 'lucide-react';
 import { ContractManagementDialog } from '@/components/squad/ContractManagementDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
 import { SquadImportDialog } from '@/components/squad/SquadImportDialog';
 import ClubSquadDepth from '@/components/squad/ClubSquadDepth';
+import PlayerPsychologyPanel from '@/components/player/PlayerPsychologyPanel';
+import { PlayerExtended, generatePlayerExtended } from '@/types/playerExtended';
 import { useToast } from '@/hooks/use-toast';
 
 const POSITION_GROUPS = {
