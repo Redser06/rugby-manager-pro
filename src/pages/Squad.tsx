@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { useTransfer } from '@/contexts/TransferContext';
 import { Player, PositionNumber } from '@/types/game';
@@ -15,11 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users } from 'lucide-react';
+import { Search, Filter, User, Activity, Heart, AlertTriangle, Pencil, Save, X, FileText, DollarSign, BarChart3, Users, Brain } from 'lucide-react';
 import { ContractManagementDialog } from '@/components/squad/ContractManagementDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
 import { SquadImportDialog } from '@/components/squad/SquadImportDialog';
 import ClubSquadDepth from '@/components/squad/ClubSquadDepth';
+import PlayerPsychologyPanel from '@/components/player/PlayerPsychologyPanel';
+import { PlayerExtended, generatePlayerExtended } from '@/types/playerExtended';
 import { useToast } from '@/hooks/use-toast';
 
 const POSITION_GROUPS = {
@@ -222,6 +224,51 @@ export default function Squad() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [contractPlayer, setContractPlayer] = useState<Player | null>(null);
 
+  // Player psychology extended data
+  const [playerExtendedData, setPlayerExtendedData] = useState<Record<string, PlayerExtended>>(() => {
+    const saved = localStorage.getItem('playerExtendedData');
+    if (saved) try { return JSON.parse(saved); } catch { /* ignore */ }
+    // Generate defaults for all players
+    const data: Record<string, PlayerExtended> = {};
+    if (team) {
+      team.players.forEach(p => {
+        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+      });
+    }
+    return data;
+  });
+
+  // Persist extended data
+  useEffect(() => {
+    localStorage.setItem('playerExtendedData', JSON.stringify(playerExtendedData));
+  }, [playerExtendedData]);
+
+  // Ensure new players get extended data
+  useEffect(() => {
+    if (!team) return;
+    const updated = { ...playerExtendedData };
+    let changed = false;
+    team.players.forEach(p => {
+      if (!updated[p.id]) {
+        updated[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+        changed = true;
+      }
+    });
+    if (changed) setPlayerExtendedData(updated);
+  }, [team?.players]);
+
+  const handleUpdateExtended = (playerId: string, updates: Partial<PlayerExtended>) => {
+    setPlayerExtendedData(prev => ({
+      ...prev,
+      [playerId]: { ...prev[playerId], ...updates }
+    }));
+  };
+
+  const handleSetMentor = (menteeId: string, mentorId: string) => {
+    handleUpdateExtended(menteeId, { mentorId });
+    toast({ title: 'Mentor Assigned', description: 'The mentoring relationship has been established.' });
+  };
+
   if (!team || !league) return null;
 
   const teamCurrency: Currency = LEAGUE_CURRENCY[league.name] || 'EUR';
@@ -311,6 +358,10 @@ export default function Squad() {
           <TabsTrigger value="depth" className="gap-1">
             <BarChart3 className="h-4 w-4" />
             Depth Analysis
+          </TabsTrigger>
+          <TabsTrigger value="psychology" className="gap-1">
+            <Brain className="h-4 w-4" />
+            Psychology
           </TabsTrigger>
         </TabsList>
 
@@ -479,6 +530,15 @@ export default function Squad() {
 
         <TabsContent value="depth" className="mt-4">
           <ClubSquadDepth players={team.players} teamName={team.name} />
+        </TabsContent>
+
+        <TabsContent value="psychology" className="mt-4">
+          <PlayerPsychologyPanel
+            players={team.players}
+            playerExtendedData={playerExtendedData}
+            onUpdateExtended={handleUpdateExtended}
+            onSetMentor={handleSetMentor}
+          />
         </TabsContent>
       </Tabs>
 
