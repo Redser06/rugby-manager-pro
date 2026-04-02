@@ -224,6 +224,51 @@ export default function Squad() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [contractPlayer, setContractPlayer] = useState<Player | null>(null);
 
+  // Player psychology extended data
+  const [playerExtendedData, setPlayerExtendedData] = useState<Record<string, PlayerExtended>>(() => {
+    const saved = localStorage.getItem('playerExtendedData');
+    if (saved) try { return JSON.parse(saved); } catch { /* ignore */ }
+    // Generate defaults for all players
+    const data: Record<string, PlayerExtended> = {};
+    if (team) {
+      team.players.forEach(p => {
+        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+      });
+    }
+    return data;
+  });
+
+  // Persist extended data
+  useEffect(() => {
+    localStorage.setItem('playerExtendedData', JSON.stringify(playerExtendedData));
+  }, [playerExtendedData]);
+
+  // Ensure new players get extended data
+  useEffect(() => {
+    if (!team) return;
+    const updated = { ...playerExtendedData };
+    let changed = false;
+    team.players.forEach(p => {
+      if (!updated[p.id]) {
+        updated[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+        changed = true;
+      }
+    });
+    if (changed) setPlayerExtendedData(updated);
+  }, [team?.players]);
+
+  const handleUpdateExtended = (playerId: string, updates: Partial<PlayerExtended>) => {
+    setPlayerExtendedData(prev => ({
+      ...prev,
+      [playerId]: { ...prev[playerId], ...updates }
+    }));
+  };
+
+  const handleSetMentor = (menteeId: string, mentorId: string) => {
+    handleUpdateExtended(menteeId, { mentorId });
+    toast({ title: 'Mentor Assigned', description: 'The mentoring relationship has been established.' });
+  };
+
   if (!team || !league) return null;
 
   const teamCurrency: Currency = LEAGUE_CURRENCY[league.name] || 'EUR';
