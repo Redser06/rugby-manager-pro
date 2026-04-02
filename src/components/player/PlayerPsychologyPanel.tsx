@@ -407,6 +407,236 @@ export default function PlayerPsychologyPanel({
             </CardContent>
           </Card>
         </TabsContent>
+        {/* INJURIES & REHAB */}
+        <TabsContent value="injuries" className="space-y-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Injured Players */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-destructive" /> Injured Players
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[350px]">
+                  <div className="space-y-3">
+                    {players.filter(p => p.injured).map(player => {
+                      const ext = getExt(player.id);
+                      if (!ext) return null;
+                      return (
+                        <div key={player.id} className="p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+                          <p className="font-medium text-sm">{player.firstName} {player.lastName}</p>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {player.position} • {player.injuryWeeks || '?'} weeks remaining
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                              toast({ title: 'Conservative Rehab', description: `${player.firstName} will take the full recovery time with reduced re-injury risk.` });
+                            }}>
+                              🛡️ Conservative
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                              toast({ title: '⚠️ Rush Back', description: `${player.firstName} returns 30% faster but re-injury risk doubles for 4 weeks!` });
+                            }}>
+                              ⚡ Rush Back
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                              toast({ title: '🏥 Surgery Option', description: `Longer recovery but fully fixes the issue. No recurring problems.` });
+                            }}>
+                              🔪 Surgery
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {players.filter(p => p.injured).length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Stethoscope className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No injured players — clean bill of health!</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Chronic Injury Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" /> Chronic Conditions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[350px]">
+                  <div className="space-y-3">
+                    {players.map(player => {
+                      const ext = getExt(player.id);
+                      if (!ext || ext.chronicInjuries.length === 0) return null;
+                      return ext.chronicInjuries.map((chronic, idx) => {
+                        const restWarning = shouldRestForChronic(ext);
+                        return (
+                          <div key={`${player.id}_${idx}`} className="p-3 rounded-lg border border-border">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="font-medium text-sm">{player.firstName} {player.lastName}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {chronic.type.replace('_', ' ')} — {chronic.severity}
+                                </p>
+                              </div>
+                              <Badge variant={chronic.severity === 'severe' ? 'destructive' : chronic.severity === 'moderate' ? 'secondary' : 'outline'}>
+                                {chronic.reinjuryRisk}% flare risk
+                              </Badge>
+                            </div>
+                            {restWarning && (
+                              <div className="text-xs text-orange-500 mb-2 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> {restWarning.reason}
+                              </div>
+                            )}
+                            <Select
+                              value={chronic.managementStrategy}
+                              onValueChange={(val) => {
+                                const updated = updateChronicManagement(ext, idx, val as ChronicInjury['managementStrategy']);
+                                onUpdateExtended(player.id, updated);
+                                toast({ title: 'Management Updated', description: `${player.firstName}'s ${chronic.type} is now managed with: ${val.replace(/_/g, ' ')}` });
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No Management</SelectItem>
+                                <SelectItem value="rest_every_3rd">Rest Every 3rd Game</SelectItem>
+                                <SelectItem value="reduced_training">Reduced Training Load</SelectItem>
+                                <SelectItem value="managed_minutes">Managed Minutes</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      });
+                    })}
+                    {players.every(p => { const ext = getExt(p.id); return !ext || ext.chronicInjuries.length === 0; }) && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No chronic conditions in the squad.</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* RETIREMENT & CAREER TWILIGHT */}
+        <TabsContent value="retirement" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sunset className="h-5 w-5 text-orange-400" /> Career Twilight
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-4">
+                  {players.filter(p => p.age >= 31).sort((a, b) => b.age - a.age).map(player => {
+                    const ext = getExt(player.id);
+                    if (!ext) return null;
+                    const shouldChat = shouldTriggerRetirementChat(player, ext);
+                    const retChat = shouldChat ? generateRetirementChat(player, ext) : null;
+                    const coachConversion = calculateCoachConversion(player, ext);
+                    
+                    return (
+                      <div key={player.id} className="p-4 rounded-lg border border-border">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-medium">{player.firstName} {player.lastName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Age {player.age} • {ext.caps} caps • {player.position}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            {player.age >= 35 && <Badge variant="destructive">Retiring Soon</Badge>}
+                            {player.age >= 33 && player.age < 35 && <Badge variant="secondary">Twilight</Badge>}
+                            {player.age >= 31 && player.age < 33 && <Badge variant="outline">Veteran</Badge>}
+                          </div>
+                        </div>
+                        
+                        {/* Chronic injuries warning */}
+                        {ext.chronicInjuries.length > 0 && (
+                          <div className="text-xs text-orange-500 mb-2">
+                            ⚠️ {ext.chronicInjuries.length} chronic condition{ext.chronicInjuries.length > 1 ? 's' : ''}: {ext.chronicInjuries.map(c => c.type.replace('_', ' ')).join(', ')}
+                          </div>
+                        )}
+                        
+                        {/* Coaching potential */}
+                        <div className="p-2 rounded bg-muted/30 mb-3">
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-primary" />
+                            <span className="text-xs">Post-career: {coachConversion.coachRole} ({coachConversion.specialization}) — Rating {coachConversion.coachRating}/100</span>
+                          </div>
+                        </div>
+                        
+                        {/* Retirement chat */}
+                        {retChat && (
+                          <div className="border-t border-border pt-3 mt-3">
+                            <p className="text-sm italic text-muted-foreground mb-3">"{retChat.message}"</p>
+                            <div className="flex flex-wrap gap-2">
+                              {retChat.options.map(opt => (
+                                <Button
+                                  key={opt.id}
+                                  size="sm"
+                                  variant={opt.decision === 'coaching_role' ? 'default' : opt.decision === 'one_more_season' ? 'outline' : 'secondary'}
+                                  className="text-xs"
+                                  onClick={() => {
+                                    if (opt.effect.happiness) onUpdateExtended(player.id, { happiness: Math.max(0, Math.min(100, ext.happiness + opt.effect.happiness)) });
+                                    if (opt.effect.confidence) onUpdateExtended(player.id, { confidence: Math.max(0, Math.min(100, ext.confidence + (opt.effect.confidence || 0))) });
+                                    toast({
+                                      title: opt.decision === 'retire' ? '👋 Retirement Planned' : opt.decision === 'coaching_role' ? '🎓 Coaching Path' : '💪 One More Season',
+                                      description: `${player.firstName} ${player.lastName}: ${opt.text.substring(0, 60)}...`,
+                                    });
+                                  }}
+                                >
+                                  {opt.text.substring(0, 45)}{opt.text.length > 45 ? '...' : ''}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Testimonial eligible */}
+                        {ext.caps >= 150 && (
+                          <div className="mt-3 p-2 rounded bg-yellow-500/10 border border-yellow-500/20">
+                            <div className="flex items-center gap-2">
+                              <Trophy className="h-4 w-4 text-yellow-500" />
+                              <span className="text-xs font-medium">Testimonial Match Eligible — {ext.caps} caps</span>
+                            </div>
+                            <Button size="sm" variant="outline" className="text-xs mt-2" onClick={() => {
+                              const event = generateTestimonialEvent(player, ext);
+                              toast({
+                                title: '🎉 Testimonial Match Scheduled!',
+                                description: `${event.playerName}'s testimonial will generate €${event.revenueBoost.toLocaleString()} and boost squad morale by ${event.moraleBoost}%.`,
+                              });
+                            }}>
+                              Schedule Testimonial
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {players.filter(p => p.age >= 31).length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Sunset className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">No veterans in the squad</p>
+                      <p className="text-sm">Players over 31 will appear here for career management.</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Player Detail Dialog */}
