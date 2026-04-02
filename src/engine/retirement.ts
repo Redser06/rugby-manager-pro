@@ -21,10 +21,8 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
   const chronicMod = ext.chronicInjuries.length > 0 ? 1.3 : 1.0;
   
   const adjustedRate = Math.round(declineRate * positionModifier * chronicMod);
-  
-  // Apply decline to all numeric attributes proportionally
   const attributeDeclines: Record<string, number> = {};
-  const attrs = player.attributes as Record<string, number>;
+  const attrs = player.attributes as unknown as Record<string, number>;
   
   for (const [key, value] of Object.entries(attrs)) {
     if (typeof value !== 'number') continue;
