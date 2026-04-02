@@ -232,7 +232,7 @@ export default function Squad() {
     const data: Record<string, PlayerExtended> = {};
     if (team) {
       team.players.forEach(p => {
-        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality) as PlayerExtended;
+        data[p.id] = generatePlayerExtended(p.age, p.overall, p.nationality, p.position) as PlayerExtended;
       });
     }
     return data;
