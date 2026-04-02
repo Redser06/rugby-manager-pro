@@ -22,17 +22,17 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
   
   const adjustedRate = Math.round(declineRate * positionModifier * chronicMod);
   
-  // Specific attributes decline differently
+  // Apply decline to all numeric attributes proportionally
   const attributeDeclines: Record<string, number> = {};
-  const attrs = player.attributes;
+  const attrs = player.attributes as Record<string, number>;
   
-  // Speed and agility decline fastest
-  if (attrs.speed) attributeDeclines.speed = Math.min(attrs.speed, Math.ceil(adjustedRate * 1.5));
-  if (attrs.agility) attributeDeclines.agility = Math.min(attrs.agility, Math.ceil(adjustedRate * 1.3));
-  
-  // Strength and tackling decline moderately
-  if (attrs.strength) attributeDeclines.strength = Math.min(attrs.strength, adjustedRate);
-  if (attrs.tackling) attributeDeclines.tackling = Math.min(attrs.tackling, Math.ceil(adjustedRate * 0.8));
+  for (const [key, value] of Object.entries(attrs)) {
+    if (typeof value !== 'number') continue;
+    // Physical attributes decline faster (heuristic: shorter names tend to be physical)
+    const isPhysical = ['pace', 'acceleration', 'stamina', 'agility'].includes(key.toLowerCase());
+    const rate = isPhysical ? Math.ceil(adjustedRate * 1.3) : Math.ceil(adjustedRate * 0.7);
+    attributeDeclines[key] = Math.min(value, rate);
+  }
   
   // Rugby IQ and kicking actually improve or hold steady
   // (no decline for these)
