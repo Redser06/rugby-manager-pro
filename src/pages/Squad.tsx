@@ -359,6 +359,10 @@ export default function Squad() {
             <BarChart3 className="h-4 w-4" />
             Depth Analysis
           </TabsTrigger>
+          <TabsTrigger value="psychology" className="gap-1">
+            <Brain className="h-4 w-4" />
+            Psychology
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="roster" className="space-y-6 mt-4">
