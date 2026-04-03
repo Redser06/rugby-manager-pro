@@ -72,6 +72,13 @@ function isFastTwitchPosition(position: string): boolean {
     pos.includes('centre') || pos.includes('center');
 }
 
+function isCardioOffsetPosition(position: string): boolean {
+  const pos = position.toLowerCase();
+  return pos.includes('flanker') || pos.includes('number 8') || pos.includes('no.8') ||
+    pos.includes('no 8') || pos.includes('scrum') || pos.includes('9');
+}
+
+
 // ---- Decline System ----
 export function applyAgingDecline(player: Player, ext: PlayerExtended): { overallDelta: number; attributeDeclines: Record<string, number> } {
   const declineAge = ext.declineOnsetAge ?? 33; // fallback for legacy data
