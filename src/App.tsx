@@ -56,6 +56,7 @@ function AppRoutes() {
       <Route path="/strength-conditioning" element={<ProtectedRoute><StrengthConditioning /></ProtectedRoute>} />
       <Route path="/periodization" element={<ProtectedRoute><Periodization /></ProtectedRoute>} />
       <Route path="/team-settings" element={<ProtectedRoute><TeamSettings /></ProtectedRoute>} />
+      <Route path="/academy" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
       <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
       <Route path="/fixtures" element={<ProtectedRoute><Fixtures /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />
