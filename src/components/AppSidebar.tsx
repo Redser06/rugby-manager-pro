@@ -36,7 +36,8 @@ import {
   UserCircle,
   Save,
   Globe,
-  Flag
+  Flag,
+  GraduationCap
 } from 'lucide-react';
 
 const menuItems = [
