@@ -188,7 +188,9 @@ function createTeam(
     kit: { ...DEFAULT_KIT },
     homeGround,
     reputation,
-    facilities: generateFacilities(homeGround, reputation, name)
+    facilities: generateFacilities(homeGround, reputation, name),
+    staff: generateStaffForTeam(country, reputation),
+    coachingPhilosophy: getDefaultPhilosophy(reputation),
   };
 }
 
