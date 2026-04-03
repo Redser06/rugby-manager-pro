@@ -247,6 +247,8 @@ export interface Team {
   homeGround: string;
   reputation: number; // 1-100
   facilities: TeamFacilities;
+  staff?: import('@/types/staff').StaffMember[];
+  coachingPhilosophy?: import('@/types/staff').CoachingPhilosophy;
 }
 
 // Tactics and game plan

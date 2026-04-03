@@ -1,5 +1,6 @@
 import { League, Team, TeamTactics, LeagueStanding, TeamKit, TeamFacilities, FacilityRating } from '@/types/game';
 import { generateSquad } from './playerGenerator';
+import { generateStaffForTeam, getDefaultPhilosophy } from './staffGenerator';
 
 const DEFAULT_TACTICS: TeamTactics = {
   attackStyle: 'structured',
@@ -187,7 +188,9 @@ function createTeam(
     kit: { ...DEFAULT_KIT },
     homeGround,
     reputation,
-    facilities: generateFacilities(homeGround, reputation, name)
+    facilities: generateFacilities(homeGround, reputation, name),
+    staff: generateStaffForTeam(country, reputation),
+    coachingPhilosophy: getDefaultPhilosophy(reputation),
   };
 }
 

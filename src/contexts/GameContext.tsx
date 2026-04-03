@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { GameState, Team, League, Match, Player, TeamKit, FacilityUpgradeRequest, TeamFacilities } from '@/types/game';
+import { StaffMember, CoachingPhilosophy } from '@/types/staff';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 
 interface GameContextType {
@@ -12,6 +13,8 @@ interface GameContextType {
   removePlayer: (playerId: string) => void;
   replaceSquad: (players: Player[]) => void;
   requestFacilityUpgrade: (request: Omit<FacilityUpgradeRequest, 'id' | 'requestedAt' | 'status'>) => void;
+  updateStaff: (staff: StaffMember[]) => void;
+  updatePhilosophy: (philosophy: CoachingPhilosophy) => void;
   getMyTeam: () => Team | null;
   getMyLeague: () => League | null;
   loadGameState: (state: GameState) => void;
@@ -258,6 +261,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   }, [gameState.selectedTeam]);
 
+  const updateStaff = useCallback((staff: StaffMember[]) => {
+    if (!gameState.selectedTeam) return;
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? { ...prev.selectedTeam, staff } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id ? { ...team, staff } : team
+        )
+      }))
+    }));
+  }, [gameState.selectedTeam]);
+
+  const updatePhilosophy = useCallback((coachingPhilosophy: CoachingPhilosophy) => {
+    if (!gameState.selectedTeam) return;
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? { ...prev.selectedTeam, coachingPhilosophy } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id ? { ...team, coachingPhilosophy } : team
+        )
+      }))
+    }));
+  }, [gameState.selectedTeam]);
+
   return (
     <GameContext.Provider value={{
       gameState,
@@ -269,6 +300,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removePlayer,
       replaceSquad,
       requestFacilityUpgrade,
+      updateStaff,
+      updatePhilosophy,
       getMyTeam,
       getMyLeague,
       loadGameState,
