@@ -114,6 +114,10 @@ export interface PlayerExtended {
   needsRest: boolean;
   restWeeksRequired: number;
   matchesSinceRest: number;
+
+  // Aging & decline
+  declineOnsetAge: number; // randomly assigned per player, position-influenced (e.g. 31-37)
+  peakAge: number; // when the player hits their ceiling
 }
 
 export interface PlayerMilestone {
