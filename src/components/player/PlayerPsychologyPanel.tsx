@@ -162,7 +162,7 @@ export default function PlayerPsychologyPanel({
                 </table>
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                * 5% of players are "sports science outliers" who decline 2 years later than their position norm. 10% age 1 year better. Mental attributes (rugby IQ, composure, vision) can improve during early decline.
+                * 5% of players are "sports science outliers" who decline 2 years later than their position norm. 10% age 1 year better. Mental attributes (rugby IQ, composure, vision) can improve during early decline. Well-rested players (managed workload) decline up to 30% slower; overworked players decline 30% faster. Back row and scrum-halves maintain stamina/cardio for 3 years into decline despite speed loss.
               </p>
             </CardContent>
           </Card>
