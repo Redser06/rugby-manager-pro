@@ -29,10 +29,17 @@ export function StaffManagementPanel({ team, onUpdateStaff, onUpdatePhilosophy }
   
   const [candidates, setCandidates] = useState<StaffMember[]>([]);
   const [searchingRole, setSearchingRole] = useState<StaffRole | null>(null);
-  const [scoutingReports, setScoutingReports] = useState<ScoutingReport[]>([]);
+  const [scoutingReports, setScoutingReports] = useState<DetailedScoutingReport[]>([]);
+  const [defensiveFocus, setDefensiveFocus] = useState<DefensiveFocusArea[]>([]);
+  const [scoutTarget, setScoutTarget] = useState<string>('');
+  const { gameState } = useGame();
+
+  // Get all teams in the league for scouting targets
+  const leagueTeams = gameState.leagues
+    .flatMap(l => l.teams)
+    .filter(t => t.id !== team.id);
 
   const handleHire = (candidate: StaffMember) => {
-    // Check if role is already filled
     const existing = staff.find(s => s.role === candidate.role);
     let newStaff: StaffMember[];
     if (existing) {
@@ -62,26 +69,34 @@ export function StaffManagementPanel({ team, onUpdateStaff, onUpdatePhilosophy }
     setCandidates(results);
   };
 
-  const generateScoutingReport = () => {
+  const generateScoutReport = () => {
     const analyst = staff.find(s => s.role === 'analyst');
     const quality = analyst ? analyst.quality : 20;
     
-    const report: ScoutingReport = {
-      teamId: 'opponent',
-      teamName: 'Next Opponent',
-      quality,
-      generatedAt: new Date(),
-      scrumTendency: quality > 30 ? (Math.random() > 0.5 ? 'Power-focused, tight-head side' : 'Quick ball, hooker strike') : undefined,
-      lineoutCalls: quality > 50 ? ['Front lift', 'Middle pod', 'Back peel'].slice(0, Math.ceil(quality / 30)) : undefined,
-      primaryAttackSide: quality > 40 ? (['left', 'right', 'balanced'] as const)[Math.floor(Math.random() * 3)] : undefined,
-      kickingPatterns: quality > 60 ? (Math.random() > 0.5 ? 'Heavy box-kick reliance from 9' : 'Fly-half contests, back-field targeting') : undefined,
-      defensiveWeakness: quality > 70 ? (Math.random() > 0.5 ? 'Slow drift on outside channels' : 'Vulnerable to crash-ball at 12') : undefined,
-      keyPlayer: quality > 45 ? 'Opposition #10 — controls tempo, target early' : undefined,
-      setPieceStrength: quality > 35 ? (['strong', 'average', 'weak'] as const)[Math.floor(Math.random() * 3)] : undefined,
-    };
+    const opponent = leagueTeams.find(t => t.id === scoutTarget);
+    if (!opponent) {
+      toast.error('Select an opponent to scout');
+      return;
+    }
     
+    const report = generateDetailedScoutingReport(opponent, quality);
     setScoutingReports(prev => [report, ...prev].slice(0, 5));
-    toast.success(`Scouting report generated (${quality}% quality)`);
+    
+    // Auto-set defensive focus from suggestions
+    if (report.suggestedDefensiveFocus) {
+      setDefensiveFocus(report.suggestedDefensiveFocus);
+    }
+    
+    toast.success(`Scouting report on ${opponent.name} (${quality}% quality)`);
+  };
+
+  const applyDefensivePreset = (preset: typeof DEFENSIVE_FOCUS_PRESETS[0]) => {
+    const areas: DefensiveFocusArea[] = preset.areas.map(a => ({
+      ...a,
+      id: Math.random().toString(36).substring(2, 7),
+    }));
+    setDefensiveFocus(areas);
+    toast.success(`Applied: ${preset.label}`);
   };
 
   const philosophyData = COACHING_PHILOSOPHIES[philosophy];
