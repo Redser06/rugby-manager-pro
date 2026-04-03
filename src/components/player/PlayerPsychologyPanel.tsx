@@ -106,7 +106,119 @@ export default function PlayerPsychologyPanel({
           <TabsTrigger value="retirement" className="gap-1 text-xs">
             <Sunset className="h-3 w-3" /> Twilight
           </TabsTrigger>
+          <TabsTrigger value="aging" className="gap-1 text-xs">
+            <Activity className="h-3 w-3" /> Aging Curves
+          </TabsTrigger>
         </TabsList>
+
+        {/* AGING CURVES REFERENCE + SQUAD TABLE */}
+        <TabsContent value="aging" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Position Aging Profiles (Reference)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-2 font-semibold">Position Group</th>
+                      <th className="text-center p-2 font-semibold">Peak Range</th>
+                      <th className="text-center p-2 font-semibold">Decline Onset</th>
+                      <th className="text-center p-2 font-semibold">Physical Decline</th>
+                      <th className="text-center p-2 font-semibold">Mental Growth</th>
+                      <th className="text-left p-2 font-semibold">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { group: 'Props & Hookers', peak: '28–32', decline: '34–38', physical: 'Slow', mental: 'Strong', notes: 'Set-piece mastery improves with age. Latest decline window.' },
+                      { group: 'Locks / 2nd Row', peak: '28–33', decline: '34–38', physical: 'Slow', mental: 'Strong', notes: 'Lineout craft & leadership peak late. Can play to 38+.' },
+                      { group: 'Back Row', peak: '27–31', decline: '33–37', physical: 'Moderate', mental: 'Strong', notes: 'Breakdown specialists last longer. Carrying declines first.' },
+                      { group: 'Scrum-Half', peak: '27–31', decline: '33–37', physical: 'Moderate', mental: 'Strong', notes: 'Less reliant on pace. Game management improves.' },
+                      { group: 'Fly-Half / Out-Half', peak: '27–33', decline: '33–39', physical: 'Moderate', mental: 'Excellent', notes: 'Brain position. Sexton peaked at 35, Carter at 34. Widest range.' },
+                      { group: 'Centres', peak: '26–30', decline: '31–35', physical: 'Fast', mental: 'Moderate', notes: 'Fast-twitch reliant. Crash-ball centres decline faster.' },
+                      { group: 'Back Three (Wings & FB)', peak: '25–29', decline: '30–34', physical: 'Fastest', mental: 'Moderate', notes: 'Most pace-dependent. Earliest decline. Experience offsets partially.' },
+                    ].map((row, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
+                        <td className="p-2 font-medium">{row.group}</td>
+                        <td className="p-2 text-center"><Badge variant="outline">{row.peak}</Badge></td>
+                        <td className="p-2 text-center"><Badge variant="secondary">{row.decline}</Badge></td>
+                        <td className="p-2 text-center">
+                          <Badge variant={row.physical === 'Fastest' ? 'destructive' : row.physical === 'Fast' ? 'destructive' : row.physical === 'Slow' ? 'default' : 'secondary'}>
+                            {row.physical}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-center">
+                          <Badge className={row.mental === 'Excellent' ? 'bg-green-600 text-white' : row.mental === 'Strong' ? 'bg-green-500/80 text-white' : 'bg-yellow-500 text-white'}>
+                            {row.mental}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-muted-foreground">{row.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                * 5% of players are "sports science outliers" who decline 2 years later than their position norm. 10% age 1 year better. Mental attributes (rugby IQ, composure, vision) can improve during early decline.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Your Squad — Individual Aging Profiles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="sticky top-0 bg-background">
+                    <tr className="border-b border-border">
+                      <th className="text-left p-2 font-semibold">Player</th>
+                      <th className="text-left p-2 font-semibold">Position</th>
+                      <th className="text-center p-2 font-semibold">Age</th>
+                      <th className="text-center p-2 font-semibold">Peak Age</th>
+                      <th className="text-center p-2 font-semibold">Decline Onset</th>
+                      <th className="text-center p-2 font-semibold">Status</th>
+                      <th className="text-center p-2 font-semibold">Caps</th>
+                      <th className="text-center p-2 font-semibold">Chronic Issues</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players
+                      .sort((a, b) => b.age - a.age)
+                      .map(p => {
+                        const ext = getExt(p.id);
+                        if (!ext) return null;
+                        const peakAge = ext.peakAge ?? 28;
+                        const declineAge = ext.declineOnsetAge ?? 33;
+                        let status: string;
+                        let statusColor: string;
+                        if (p.age < peakAge) { status = 'Developing'; statusColor = 'bg-blue-500 text-white'; }
+                        else if (p.age <= peakAge + 1) { status = 'At Peak'; statusColor = 'bg-green-500 text-white'; }
+                        else if (p.age < declineAge) { status = 'Prime'; statusColor = 'bg-green-600 text-white'; }
+                        else if (p.age < declineAge + 3) { status = 'Early Decline'; statusColor = 'bg-yellow-500 text-white'; }
+                        else { status = 'Twilight'; statusColor = 'bg-red-500 text-white'; }
+                        return (
+                          <tr key={p.id} className="border-b border-border/50 hover:bg-muted/50">
+                            <td className="p-2 font-medium">{p.firstName} {p.lastName}</td>
+                            <td className="p-2 text-muted-foreground">{p.position}</td>
+                            <td className="p-2 text-center font-bold">{p.age}</td>
+                            <td className="p-2 text-center">{peakAge}</td>
+                            <td className="p-2 text-center">{declineAge}</td>
+                            <td className="p-2 text-center"><Badge className={statusColor}>{status}</Badge></td>
+                            <td className="p-2 text-center">{ext.caps}</td>
+                            <td className="p-2 text-center">{ext.chronicInjuries.length > 0 ? <Badge variant="destructive">{ext.chronicInjuries.length}</Badge> : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* MORALE OVERVIEW */}
         <TabsContent value="morale" className="space-y-4 mt-4">
