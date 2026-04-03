@@ -7,12 +7,14 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   StaffMember, StaffRole, STAFF_ROLE_INFO, CoachingPhilosophy, 
-  COACHING_PHILOSOPHIES, calculateStaffBonuses, ScoutingReport 
+  COACHING_PHILOSOPHIES, calculateStaffBonuses,
 } from '@/types/staff';
 import { generateStaffCandidate } from '@/data/staffGenerator';
 import { Team } from '@/types/game';
-import { Users, Plus, X, Brain, Search, BarChart3, Shield, Swords, Target } from 'lucide-react';
+import { generateDetailedScoutingReport, DetailedScoutingReport, DEFENSIVE_FOCUS_PRESETS, DefensiveFocusArea } from '@/engine/scouting';
+import { Users, Plus, X, Brain, Search, BarChart3, Shield, Swords, Target, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGame } from '@/contexts/GameContext';
 
 interface StaffManagementPanelProps {
   team: Team;
