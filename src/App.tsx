@@ -25,6 +25,7 @@ import CoachManager from "./pages/CoachManager";
 import EuropeanCups from "./pages/EuropeanCups";
 import SixNations from "./pages/SixNations";
 import ShareView from "./pages/ShareView";
+import Academy from "./pages/Academy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ function AppRoutes() {
       <Route path="/strength-conditioning" element={<ProtectedRoute><StrengthConditioning /></ProtectedRoute>} />
       <Route path="/periodization" element={<ProtectedRoute><Periodization /></ProtectedRoute>} />
       <Route path="/team-settings" element={<ProtectedRoute><TeamSettings /></ProtectedRoute>} />
+      <Route path="/academy" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
       <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
       <Route path="/fixtures" element={<ProtectedRoute><Fixtures /></ProtectedRoute>} />
       <Route path="/standings" element={<ProtectedRoute><Standings /></ProtectedRoute>} />

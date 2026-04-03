@@ -36,7 +36,8 @@ import {
   UserCircle,
   Save,
   Globe,
-  Flag
+  Flag,
+  GraduationCap
 } from 'lucide-react';
 
 const menuItems = [
@@ -45,6 +46,7 @@ const menuItems = [
   { title: 'Squad', url: '/squad', icon: Users },
   { title: 'Transfers', url: '/transfers', icon: ArrowRightLeft },
   { title: 'Team Settings', url: '/team-settings', icon: Shirt },
+  { title: 'Academy', url: '/academy', icon: GraduationCap },
   { title: 'Tactics', url: '/tactics', icon: Swords },
   { title: 'Strike Plays', url: '/strike-plays', icon: Target },
   { title: 'Training', url: '/training', icon: Dumbbell },
