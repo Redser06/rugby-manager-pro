@@ -114,6 +114,10 @@ export interface PlayerExtended {
   needsRest: boolean;
   restWeeksRequired: number;
   matchesSinceRest: number;
+
+  // Aging & decline
+  declineOnsetAge: number; // randomly assigned per player, position-influenced (e.g. 31-37)
+  peakAge: number; // when the player hits their ceiling
 }
 
 export interface PlayerMilestone {
@@ -205,6 +209,40 @@ export function assignArchetype(position: string): PlayerArchetype {
   return archetypes[Math.floor(Math.random() * archetypes.length)];
 }
 
+function generateAgingProfile(position: string): { declineOnsetAge: number; peakAge: number } {
+  const pos = position.toLowerCase();
+  let peakRange: [number, number];
+  let declineRange: [number, number];
+
+  if (pos.includes('prop') || pos.includes('hooker')) {
+    peakRange = [28, 32]; declineRange = [34, 38];
+  } else if (pos.includes('lock') || pos.includes('2nd row') || pos.includes('second row')) {
+    peakRange = [28, 33]; declineRange = [34, 38];
+  } else if (pos.includes('flanker') || pos.includes('number 8') || pos.includes('no.8') || pos.includes('no 8')) {
+    peakRange = [27, 31]; declineRange = [33, 37];
+  } else if (pos.includes('scrum') || pos.includes('9')) {
+    peakRange = [27, 31]; declineRange = [33, 37];
+  } else if (pos.includes('fly') || pos.includes('out-half') || pos.includes('outhalf') || pos.includes('10')) {
+    peakRange = [27, 33]; declineRange = [33, 39];
+  } else if (pos.includes('centre') || pos.includes('center') || pos.includes('12') || pos.includes('13')) {
+    peakRange = [26, 30]; declineRange = [31, 35];
+  } else if (pos.includes('wing') || pos.includes('fullback') || pos.includes('full back') || pos.includes('14') || pos.includes('15') || pos.includes('11')) {
+    peakRange = [25, 29]; declineRange = [30, 34];
+  } else {
+    peakRange = [27, 31]; declineRange = [32, 36];
+  }
+
+  const outlierRoll = Math.random();
+  let declineBonus = 0;
+  if (outlierRoll < 0.05) declineBonus = 2;
+  else if (outlierRoll < 0.15) declineBonus = 1;
+
+  const declineOnsetAge = declineRange[0] + Math.floor(Math.random() * (declineRange[1] - declineRange[0] + 1)) + declineBonus;
+  const peakAge = peakRange[0] + Math.floor(Math.random() * (peakRange[1] - peakRange[0] + 1));
+
+  return { declineOnsetAge, peakAge };
+}
+
 // Default extended values for generating new players
 export function generatePlayerExtended(age: number, overall: number, nationality: string, position?: string): Partial<PlayerExtended> {
   const isYoung = age < 24;
@@ -252,6 +290,9 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     needsRest: false,
     restWeeksRequired: 0,
     matchesSinceRest: 0,
+
+    // Aging — position-specific with randomness
+    ...generateAgingProfile(position || 'Flanker'),
   };
 }
 
