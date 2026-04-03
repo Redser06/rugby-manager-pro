@@ -94,6 +94,14 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
     return { overallDelta: 0, attributeDeclines: {} };
   }
 
+  // Rest management factor — well-rested players decline slower
+  // matchesSinceRest: high = overworked, low = well managed
+  const restFactor = ext.matchesSinceRest <= 2 ? 0.7 : // well rested
+    ext.matchesSinceRest <= 4 ? 0.85 : // moderately managed
+    ext.matchesSinceRest <= 6 ? 1.0 : // normal workload
+    ext.matchesSinceRest <= 8 ? 1.15 : // slightly overworked
+    1.3; // overworked — accelerated decline
+
   // Years past decline onset determines severity
   const yearsPastDecline = player.age - declineAge;
   const baseDeclineRate = Math.min(yearsPastDecline + 1, 5); // 1-5 scale
@@ -102,7 +110,9 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
   const chronicMod = ext.chronicInjuries.length > 0 ? 1.0 + (ext.chronicInjuries.length * 0.15) : 1.0;
 
   // Fast-twitch positions lose physical attributes faster
+  // But back row & scrum-halves get cardio offset — their speed declines but stamina/work rate holds
   const fastTwitch = isFastTwitchPosition(player.position);
+  const hasCardioOffset = isCardioOffsetPosition(player.position);
 
   const attributeDeclines: Record<string, number> = {};
   const attrs = player.attributes as unknown as Record<string, number>;

@@ -214,14 +214,16 @@ function generateAgingProfile(position: string): { declineOnsetAge: number; peak
   let peakRange: [number, number];
   let declineRange: [number, number];
 
-  if (pos.includes('prop') || pos.includes('hooker')) {
-    peakRange = [28, 32]; declineRange = [34, 38];
+  if (pos.includes('hooker')) {
+    peakRange = [26, 32]; declineRange = [33, 37];
+  } else if (pos.includes('prop')) {
+    peakRange = [28, 33]; declineRange = [35, 39];
   } else if (pos.includes('lock') || pos.includes('2nd row') || pos.includes('second row')) {
-    peakRange = [28, 33]; declineRange = [34, 38];
+    peakRange = [28, 34]; declineRange = [35, 39];
   } else if (pos.includes('flanker') || pos.includes('number 8') || pos.includes('no.8') || pos.includes('no 8')) {
-    peakRange = [27, 31]; declineRange = [33, 37];
+    peakRange = [27, 33]; declineRange = [34, 38]; // cardio fitness offsets speed decline
   } else if (pos.includes('scrum') || pos.includes('9')) {
-    peakRange = [27, 31]; declineRange = [33, 37];
+    peakRange = [27, 33]; declineRange = [34, 38]; // cardio fitness offsets speed decline
   } else if (pos.includes('fly') || pos.includes('out-half') || pos.includes('outhalf') || pos.includes('10')) {
     peakRange = [27, 33]; declineRange = [33, 39];
   } else if (pos.includes('centre') || pos.includes('center') || pos.includes('12') || pos.includes('13')) {
