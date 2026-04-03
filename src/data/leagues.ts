@@ -1,5 +1,6 @@
 import { League, Team, TeamTactics, LeagueStanding, TeamKit, TeamFacilities, FacilityRating } from '@/types/game';
 import { generateSquad } from './playerGenerator';
+import { generateStaffForTeam, getDefaultPhilosophy } from './staffGenerator';
 
 const DEFAULT_TACTICS: TeamTactics = {
   attackStyle: 'structured',
