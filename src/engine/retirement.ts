@@ -134,10 +134,16 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
 
     let rate: number;
     if (isPhysical) {
-      // Physical decline — faster for backs, slower for forwards
-      rate = Math.ceil(baseDeclineRate * (fastTwitch ? 1.5 : 1.0) * chronicMod);
-      // Add randomness: some years you decline more, some less
-      rate = Math.max(0, rate + (Math.random() < 0.3 ? 1 : Math.random() < 0.2 ? -1 : 0));
+      // Cardio-offset positions: stamina/endurance hold steady, only speed/acceleration decline
+      const isCardioAttr = hasCardioOffset && (keyLower === 'stamina' || keyLower === 'endurance' || keyLower === 'work_rate');
+      if (isCardioAttr && yearsPastDecline <= 3) {
+        rate = 0; // cardio fitness maintained through maturity
+      } else {
+        // Physical decline — faster for backs (fast-twitch), modulated by rest
+        rate = Math.ceil(baseDeclineRate * (fastTwitch ? 1.5 : 1.0) * chronicMod * restFactor);
+        // Add randomness: some years you decline more, some less
+        rate = Math.max(0, rate + (Math.random() < 0.3 ? 1 : Math.random() < 0.2 ? -1 : 0));
+      }
     } else if (isMental) {
       // Mental attributes hold steady or even improve slightly in early decline
       if (yearsPastDecline <= 2 && Math.random() < 0.3) {
