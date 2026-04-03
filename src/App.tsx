@@ -25,6 +25,7 @@ import CoachManager from "./pages/CoachManager";
 import EuropeanCups from "./pages/EuropeanCups";
 import SixNations from "./pages/SixNations";
 import ShareView from "./pages/ShareView";
+import Academy from "./pages/Academy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
