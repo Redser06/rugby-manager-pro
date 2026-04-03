@@ -261,6 +261,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }));
   }, [gameState.selectedTeam]);
 
+  const updateStaff = useCallback((staff: StaffMember[]) => {
+    if (!gameState.selectedTeam) return;
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? { ...prev.selectedTeam, staff } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id ? { ...team, staff } : team
+        )
+      }))
+    }));
+  }, [gameState.selectedTeam]);
+
+  const updatePhilosophy = useCallback((coachingPhilosophy: CoachingPhilosophy) => {
+    if (!gameState.selectedTeam) return;
+    setGameState(prev => ({
+      ...prev,
+      selectedTeam: prev.selectedTeam ? { ...prev.selectedTeam, coachingPhilosophy } : null,
+      leagues: prev.leagues.map(league => ({
+        ...league,
+        teams: league.teams.map(team =>
+          team.id === prev.selectedTeam?.id ? { ...team, coachingPhilosophy } : team
+        )
+      }))
+    }));
+  }, [gameState.selectedTeam]);
+
   return (
     <GameContext.Provider value={{
       gameState,
@@ -272,6 +300,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removePlayer,
       replaceSquad,
       requestFacilityUpgrade,
+      updateStaff,
+      updatePhilosophy,
       getMyTeam,
       getMyLeague,
       loadGameState,
