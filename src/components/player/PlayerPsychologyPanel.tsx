@@ -132,10 +132,11 @@ export default function PlayerPsychologyPanel({
                   </thead>
                   <tbody>
                     {[
-                      { group: 'Props & Hookers', peak: '28–32', decline: '34–38', physical: 'Slow', mental: 'Strong', notes: 'Set-piece mastery improves with age. Latest decline window.' },
-                      { group: 'Locks / 2nd Row', peak: '28–33', decline: '34–38', physical: 'Slow', mental: 'Strong', notes: 'Lineout craft & leadership peak late. Can play to 38+.' },
-                      { group: 'Back Row', peak: '27–31', decline: '33–37', physical: 'Moderate', mental: 'Strong', notes: 'Breakdown specialists last longer. Carrying declines first.' },
-                      { group: 'Scrum-Half', peak: '27–31', decline: '33–37', physical: 'Moderate', mental: 'Strong', notes: 'Less reliant on pace. Game management improves.' },
+                      { group: 'Hookers', peak: '26–32', decline: '33–37', physical: 'Moderate', mental: 'Strong', notes: 'Modern hooker is athletic & mobile. Earlier peak than other front row.' },
+                      { group: 'Props', peak: '28–33', decline: '35–39', physical: 'Slow', mental: 'Strong', notes: 'Scrum mastery improves with age. Latest decline window with locks.' },
+                      { group: 'Locks / 2nd Row', peak: '28–34', decline: '35–39', physical: 'Slow', mental: 'Strong', notes: 'Lineout craft & leadership peak late. Can play to 39+.' },
+                      { group: 'Back Row', peak: '27–33', decline: '34–38', physical: 'Moderate', mental: 'Strong', notes: 'Cardio fitness offsets speed decline. Stamina holds 3 years into decline.' },
+                      { group: 'Scrum-Half', peak: '27–33', decline: '34–38', physical: 'Moderate', mental: 'Strong', notes: 'Cardio offset like back row. Game management improves with age.' },
                       { group: 'Fly-Half / Out-Half', peak: '27–33', decline: '33–39', physical: 'Moderate', mental: 'Excellent', notes: 'Brain position. Sexton peaked at 35, Carter at 34. Widest range.' },
                       { group: 'Centres', peak: '26–30', decline: '31–35', physical: 'Fast', mental: 'Moderate', notes: 'Fast-twitch reliant. Crash-ball centres decline faster.' },
                       { group: 'Back Three (Wings & FB)', peak: '25–29', decline: '30–34', physical: 'Fastest', mental: 'Moderate', notes: 'Most pace-dependent. Earliest decline. Experience offsets partially.' },
@@ -161,7 +162,7 @@ export default function PlayerPsychologyPanel({
                 </table>
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                * 5% of players are "sports science outliers" who decline 2 years later than their position norm. 10% age 1 year better. Mental attributes (rugby IQ, composure, vision) can improve during early decline.
+                * 5% of players are "sports science outliers" who decline 2 years later than their position norm. 10% age 1 year better. Mental attributes (rugby IQ, composure, vision) can improve during early decline. Well-rested players (managed workload) decline up to 30% slower; overworked players decline 30% faster. Back row and scrum-halves maintain stamina/cardio for 3 years into decline despite speed loss.
               </p>
             </CardContent>
           </Card>
