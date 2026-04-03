@@ -304,46 +304,164 @@ export function StaffManagementPanel({ team, onUpdateStaff, onUpdatePhilosophy }
       {/* SCOUTING TAB */}
       <TabsContent value="scouting">
         <div className="space-y-4">
+          {/* Scout selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Opposition Scouting</span>
-                <Button size="sm" onClick={generateScoutingReport} disabled={!staff.find(s => s.role === 'analyst')}>
-                  <Search className="h-4 w-4 mr-1" /> Generate Report
-                </Button>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" /> Opposition Scouting
               </CardTitle>
               <CardDescription>
                 {staff.find(s => s.role === 'analyst')
-                  ? `Your analyst (quality: ${staff.find(s => s.role === 'analyst')!.quality}) will scout the opposition`
-                  : 'Hire a Performance Analyst to unlock scouting reports'}
+                  ? `Analyst quality: ${staff.find(s => s.role === 'analyst')!.quality}% — higher quality reveals more detail`
+                  : 'Hire a Performance Analyst to unlock detailed scouting reports'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {scoutingReports.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No reports generated yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {scoutingReports.map((report, i) => (
-                    <div key={i} className="p-4 rounded-lg bg-muted/50 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">{report.teamName}</h4>
-                        <Badge variant="outline">{report.quality}% quality</Badge>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        {report.scrumTendency && <div><span className="text-muted-foreground">Scrum:</span> {report.scrumTendency}</div>}
-                        {report.primaryAttackSide && <div><span className="text-muted-foreground">Attack focus:</span> {report.primaryAttackSide}</div>}
-                        {report.setPieceStrength && <div><span className="text-muted-foreground">Set piece:</span> {report.setPieceStrength}</div>}
-                        {report.keyPlayer && <div><span className="text-muted-foreground">Key player:</span> {report.keyPlayer}</div>}
-                        {report.kickingPatterns && <div><span className="text-muted-foreground">Kicking:</span> {report.kickingPatterns}</div>}
-                        {report.defensiveWeakness && <div><span className="text-muted-foreground">Weakness:</span> {report.defensiveWeakness}</div>}
-                        {report.lineoutCalls && <div><span className="text-muted-foreground">Known lineout calls:</span> {report.lineoutCalls.join(', ')}</div>}
-                      </div>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Select value={scoutTarget} onValueChange={setScoutTarget}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select opponent to scout" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leagueTeams.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={generateScoutReport} disabled={!scoutTarget}>
+                  <Search className="h-4 w-4 mr-1" /> Scout
+                </Button>
+              </div>
+
+              {/* Defensive focus presets */}
+              <div>
+                <p className="text-xs font-medium mb-2">Quick Defensive Presets</p>
+                <div className="flex flex-wrap gap-2">
+                  {DEFENSIVE_FOCUS_PRESETS.map((preset, i) => (
+                    <Button key={i} size="sm" variant="outline" className="text-xs" onClick={() => applyDefensivePreset(preset)}>
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active focus areas */}
+              {defensiveFocus.length > 0 && (
+                <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
+                  <p className="text-xs font-medium mb-2 flex items-center gap-1"><Target className="h-3 w-3" /> Active Defensive Focus</p>
+                  {defensiveFocus.map(f => (
+                    <div key={f.id} className="flex items-center justify-between text-sm py-1">
+                      <span>{f.instruction}</span>
+                      <Badge variant="outline" className="text-xs">{f.area.replace(/_/g, ' ')}</Badge>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Reports */}
+          {scoutingReports.map((report, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-base">{report.teamName}</CardTitle>
+                  <Badge variant="outline">{report.quality}% intel</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Form */}
+                {report.opponentFormLast5 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Form:</span>
+                    <div className="flex gap-0.5">
+                      {report.opponentFormLast5.split('').map((r, j) => (
+                        <span key={j} className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded ${
+                          r === 'W' ? 'bg-green-600/20 text-green-600' : r === 'L' ? 'bg-red-600/20 text-red-600' : 'bg-muted text-muted-foreground'
+                        }`}>{r}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  {report.scrumTendency && <div><span className="text-muted-foreground">Scrum:</span> {report.scrumTendency}</div>}
+                  {report.primaryAttackSide && <div><span className="text-muted-foreground">Attack focus:</span> {report.primaryAttackSide}</div>}
+                  {report.setPieceStrength && <div><span className="text-muted-foreground">Set piece:</span> {report.setPieceStrength}</div>}
+                  {report.maulFrequency && <div><span className="text-muted-foreground">Maul tendency:</span> {report.maulFrequency}</div>}
+                  {report.keyPlayer && <div><span className="text-muted-foreground">Key player:</span> {report.keyPlayer}</div>}
+                  {report.targetChannel && <div><span className="text-muted-foreground">Attack channel:</span> {report.targetChannel}</div>}
+                  {report.kickingPatterns && <div><span className="text-muted-foreground">Kicking:</span> {report.kickingPatterns}</div>}
+                  {report.contestableKickRate != null && <div><span className="text-muted-foreground">Contestable kicks:</span> {report.contestableKickRate}%</div>}
+                  {report.ruckSpeed && <div><span className="text-muted-foreground">Ruck speed:</span> {report.ruckSpeed}</div>}
+                  {report.jackallThreat && <div><span className="text-muted-foreground">Jackal threat:</span> {report.jackallThreat}</div>}
+                  {report.lineoutMaulPercentage != null && <div><span className="text-muted-foreground">Lineout → maul:</span> {report.lineoutMaulPercentage}%</div>}
+                  {report.scrumPenaltyRate != null && <div><span className="text-muted-foreground">Scrum penalties/game:</span> {report.scrumPenaltyRate.toFixed(1)}</div>}
+                  {report.defensiveWeakness && <div className="col-span-2"><span className="text-muted-foreground">Defence weakness:</span> {report.defensiveWeakness}</div>}
+                </div>
+
+                {/* Danger player */}
+                {report.dangerPlayer && (
+                  <div className="p-2 rounded bg-destructive/10 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+                    <div className="text-sm">
+                      <span className="font-medium">{report.dangerPlayer.name}</span> ({report.dangerPlayer.position})
+                      <br /><span className="text-muted-foreground">{report.dangerPlayer.threat}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lineout calls */}
+                {report.lineoutCalls && report.lineoutCalls.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium">Known Lineout Calls:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {report.lineoutCalls.map((call, j) => (
+                        <Badge key={j} variant="secondary" className="text-xs">{call}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Weaknesses */}
+                {report.weaknesses.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium">Exploitable Weaknesses:</span>
+                    <ul className="mt-1 space-y-0.5">
+                      {report.weaknesses.map((w, j) => (
+                        <li key={j} className="text-xs text-muted-foreground">• {w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Suggested focus */}
+                {report.suggestedDefensiveFocus && report.suggestedDefensiveFocus.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium">Recommended Defensive Focus:</span>
+                    <div className="mt-1 space-y-1">
+                      {report.suggestedDefensiveFocus.map((f, j) => (
+                        <div key={j} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50">
+                          <span>{f.instruction}</span>
+                          <Badge variant="outline" className="text-xs">{f.intensity}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <Button 
+                      size="sm" variant="outline" className="mt-2 text-xs"
+                      onClick={() => { setDefensiveFocus(report.suggestedDefensiveFocus!); toast.success('Applied recommended focus areas'); }}
+                    >
+                      Apply Recommended Focus
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+
+          {scoutingReports.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">Select an opponent and generate a scouting report</p>
+          )}
         </div>
       </TabsContent>
     </Tabs>
