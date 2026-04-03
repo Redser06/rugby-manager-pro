@@ -256,6 +256,13 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     needsRest: false,
     restWeeksRequired: 0,
     matchesSinceRest: 0,
+
+    // Aging — position-specific with randomness
+    ...(() => {
+      const { generateDeclineOnsetAge } = require('@/engine/retirement');
+      const ages = generateDeclineOnsetAge(position || 'Flanker');
+      return { declineOnsetAge: ages.declineOnsetAge, peakAge: ages.peakAge };
+    })(),
   };
 }
 
