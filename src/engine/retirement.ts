@@ -78,7 +78,7 @@ export function applyAgingDecline(player: Player, ext: PlayerExtended): { overal
 
   if (player.age < declineAge) {
     // Before decline — mental attributes may still IMPROVE
-    if (player.age >= ext.peakAge ?? 28) {
+    if (player.age >= (ext.peakAge || 28)) {
       const mentalGains: Record<string, number> = {};
       const attrs = player.attributes as unknown as Record<string, number>;
       for (const [key, value] of Object.entries(attrs)) {
