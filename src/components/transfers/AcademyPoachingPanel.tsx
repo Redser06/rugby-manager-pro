@@ -117,8 +117,9 @@ export function AcademyPoachingPanel() {
         });
       }
 
+      const newStatus: 'retained' | 'lost' = result.retained ? 'retained' : 'lost';
       const updated = prev.map(a =>
-        a.id === attemptId ? { ...a, status: (result.retained ? 'retained' : 'lost') as const } : a
+        a.id === attemptId ? { ...a, status: newStatus } : a
       );
       localStorage.setItem('rugbyManagerPoaching', JSON.stringify(updated));
       return updated;
