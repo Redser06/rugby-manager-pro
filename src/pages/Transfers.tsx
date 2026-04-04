@@ -19,7 +19,10 @@ import {
   Users,
   Clock,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Phone,
+  Heart,
+  GraduationCap
 } from 'lucide-react';
 import { useTransfer } from '@/contexts/TransferContext';
 import { useGame } from '@/contexts/GameContext';
@@ -28,6 +31,9 @@ import { ShortlistPanel } from '@/components/transfers/ShortlistPanel';
 import { OffersPanel } from '@/components/transfers/OffersPanel';
 import { OfferDialog } from '@/components/transfers/OfferDialog';
 import { SalaryCapWidget } from '@/components/transfers/SalaryCapWidget';
+import { AgentDemandsPanel } from '@/components/transfers/AgentDemandsPanel';
+import { TeamChemistryPanel } from '@/components/transfers/TeamChemistryPanel';
+import { AcademyPoachingPanel } from '@/components/transfers/AcademyPoachingPanel';
 import { PlayerWithContract } from '@/types/transfer';
 import { Position } from '@/types/game';
 import { LEAGUES } from '@/data/leagues';
