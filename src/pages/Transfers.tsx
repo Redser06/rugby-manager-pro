@@ -339,6 +339,18 @@ export default function Transfers() {
             <TabsContent value="offers">
               <OffersPanel players={allPlayers} />
             </TabsContent>
+            
+            <TabsContent value="agents">
+              <AgentDemandsPanel />
+            </TabsContent>
+            
+            <TabsContent value="chemistry">
+              <TeamChemistryPanel />
+            </TabsContent>
+            
+            <TabsContent value="academy">
+              <AcademyPoachingPanel />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
