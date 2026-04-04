@@ -211,18 +211,30 @@ export default function Transfers() {
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs defaultValue="market">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="market" className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 Market
               </TabsTrigger>
               <TabsTrigger value="shortlist" className="flex items-center gap-1">
                 <Star className="h-4 w-4" />
-                Shortlist ({transferState.shortlist.length})
+                Shortlist
               </TabsTrigger>
               <TabsTrigger value="offers" className="flex items-center gap-1">
                 <Send className="h-4 w-4" />
                 Offers
+              </TabsTrigger>
+              <TabsTrigger value="agents" className="flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                Agents
+              </TabsTrigger>
+              <TabsTrigger value="chemistry" className="flex items-center gap-1">
+                <Heart className="h-4 w-4" />
+                Chemistry
+              </TabsTrigger>
+              <TabsTrigger value="academy" className="flex items-center gap-1">
+                <GraduationCap className="h-4 w-4" />
+                Academy
               </TabsTrigger>
             </TabsList>
             
