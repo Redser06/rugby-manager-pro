@@ -344,6 +344,16 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {/* Season Narrative & Events */}
+      {narrativeState && (
+        <SeasonEventsPanel
+          narrativeState={narrativeState}
+          currentWeek={gameState.currentWeek}
+          upcomingReferee={upcomingRef}
+          onEventChoice={handleEventChoice}
+        />
+      )}
+
       {/* Starting XV Preview */}
       <Card>
         <CardHeader>
