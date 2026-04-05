@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ShareDialog } from '@/components/share/ShareDialog';
+import { SeasonEventsPanel } from '@/components/narrative/SeasonEventsPanel';
+import {
+  initSeasonNarrative, processWeeklyNarrative, assignReferee,
+  SeasonNarrativeState, MatchReferee
+} from '@/engine/seasonNarrative';
 import { 
   Calendar, 
   Users, 
@@ -19,7 +24,8 @@ import {
   AlertTriangle,
   CloudRain,
   Sun,
-  Share2
+  Share2,
+  Newspaper
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
