@@ -967,7 +967,7 @@ export function processWeeklyNarrative(
 
   // Derby detection
   if (opponentId && opponentName && isDerby(team.id, opponentId)) {
-    newEvents.push(generateDerbyEvent(opponentName, week));
+    newEvents.push(generateDerbyEvent(opponentName, week, team.id, opponentId));
   }
 
   // Add effects from new events
