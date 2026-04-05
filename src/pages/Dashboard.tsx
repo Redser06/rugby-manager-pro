@@ -34,6 +34,10 @@ export default function Dashboard() {
   const team = getMyTeam();
   const league = getMyLeague();
   
+  // Season narrative state
+  const [narrativeState, setNarrativeState] = useState<SeasonNarrativeState | null>(null);
+  const [upcomingRef, setUpcomingRef] = useState<MatchReferee | undefined>();
+  
   // Load/generate fixtures schedule
   const [schedule, setSchedule] = useState<SeasonSchedule | null>(null);
   
