@@ -204,6 +204,18 @@ export function SeasonEventsPanel({ narrativeState, currentWeek, upcomingReferee
               <Progress value={board.patience} className="h-2" />
             </div>
 
+            {/* Club Priority */}
+            {board.clubPriority && (
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-xs text-muted-foreground mb-1">Club Priority</p>
+                <p className="font-semibold text-sm capitalize">
+                  {board.clubPriority === 'europe_first' ? '🏆 Europe First' :
+                   board.clubPriority === 'domestic_first' ? '🏠 Domestic First' :
+                   '⚖️ Balanced'}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="text-center p-3 rounded-lg bg-muted">
                 <p className="text-xs text-muted-foreground">Home Record</p>
@@ -218,6 +230,23 @@ export function SeasonEventsPanel({ narrativeState, currentWeek, upcomingReferee
                 </p>
               </div>
             </div>
+
+            {board.europeanRecord && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 rounded-lg bg-muted">
+                  <p className="text-xs text-muted-foreground">European Record</p>
+                  <p className="font-bold text-lg">
+                    {board.europeanRecord.wins}W {board.europeanRecord.draws}D {board.europeanRecord.losses}L
+                  </p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted">
+                  <p className="text-xs text-muted-foreground">Derby Record</p>
+                  <p className="font-bold text-lg">
+                    {(board.derbyRecord?.wins || 0)}W {(board.derbyRecord?.draws || 0)}D {(board.derbyRecord?.losses || 0)}L
+                  </p>
+                </div>
+              </div>
+            )}
 
             {board.recentResults.length > 0 && (
               <div>
