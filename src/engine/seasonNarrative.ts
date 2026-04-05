@@ -704,7 +704,7 @@ function generateEventId(): string {
   return 'evt-' + Math.random().toString(36).substring(2, 9);
 }
 
-function formatExpectation(exp: BoardExpectation): string {
+export function formatExpectation(exp: BoardExpectation): string {
   const map: Record<BoardExpectation, string> = {
     survival: 'Avoid Relegation',
     mid_table: 'Mid-Table Finish',
