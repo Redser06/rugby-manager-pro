@@ -69,11 +69,48 @@ export default function Dashboard() {
     return fixtures.find(f => f.homeTeamId === team.id || f.awayTeamId === team.id) || null;
   }, [schedule, gameState.currentWeek, team]);
   
+  // Init/update season narrative
+  useEffect(() => {
+    if (!team || !league) return;
+    const position = league.standings.findIndex(s => s.teamId === team.id) + 1 || 1;
+    
+    if (!narrativeState) {
+      const initial = initSeasonNarrative(team, league.teams.length);
+      setNarrativeState(initial);
+    } else {
+      // Process weekly narrative
+      const fixture = thisWeekFixture;
+      const opponentId = fixture ? (fixture.homeTeamId === team.id ? fixture.awayTeamId : fixture.homeTeamId) : undefined;
+      const opponentName = fixture ? (fixture.homeTeamId === team.id ? fixture.awayTeamName : fixture.homeTeamName) : undefined;
+      
+      const updated = processWeeklyNarrative(narrativeState, team, gameState.currentWeek, position, league.teams.length, opponentId, opponentName);
+      
+      // Assign referee for this week's match
+      if (fixture && narrativeState.refereePool.length > 0) {
+        const ref = assignReferee(updated.refereePool, team.country);
+        setUpcomingRef(ref);
+      } else {
+        setUpcomingRef(undefined);
+      }
+      
+      setNarrativeState(updated);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.currentWeek, team?.id]);
+  
   // Check if training is restricted this week
   const trainingRestricted = useMemo(() => {
     if (!schedule || !team) return false;
     return !canTeamTrain(schedule, team.id, gameState.currentWeek);
   }, [schedule, team, gameState.currentWeek]);
+
+  const handleEventChoice = (eventId: string, choiceId: string) => {
+    if (!narrativeState) return;
+    const updatedEvents = narrativeState.events.map(e => 
+      e.id === eventId ? { ...e, chosenOption: choiceId, resolved: true } : e
+    );
+    setNarrativeState({ ...narrativeState, events: updatedEvents });
+  };
 
   if (!team) {
     return null;
