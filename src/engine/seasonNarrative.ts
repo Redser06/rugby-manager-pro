@@ -598,7 +598,7 @@ export function generateMediaEvents(
   const ctx: MediaContext = {
     awayLosses: board.awayRecord.losses,
     awayWins: board.awayRecord.wins,
-    recentForm: board.recentResults,
+    recentForm: board.recentResults.map(r => r.result),
     position,
     leagueSize,
     week,

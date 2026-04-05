@@ -223,18 +223,21 @@ export function SeasonEventsPanel({ narrativeState, currentWeek, upcomingReferee
               <div>
                 <p className="text-xs text-muted-foreground mb-2">Recent Form</p>
                 <div className="flex gap-1">
-                  {board.recentResults.map((r, i) => (
+                  {board.recentResults.map((r, i) => {
+                    const result = typeof r === 'string' ? r : r.result;
+                    return (
                     <div
                       key={i}
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                        r === 'W' ? 'bg-green-500/20 text-green-700' :
-                        r === 'L' ? 'bg-red-500/20 text-red-700' :
+                        result === 'W' ? 'bg-green-500/20 text-green-700' :
+                        result === 'L' ? 'bg-red-500/20 text-red-700' :
                         'bg-amber-500/20 text-amber-700'
                       }`}
                     >
-                      {r}
+                      {result}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
