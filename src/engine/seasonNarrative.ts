@@ -831,45 +831,83 @@ export function getRefereeTacticalAdvice(ref: MatchReferee): string[] {
 // DERBY & RIVALRY
 // ========================
 
-const RIVALRY_PAIRS: [string, string][] = [
-  // Irish derbies
-  ['leinster', 'munster'],
-  ['leinster', 'connacht'],
-  ['munster', 'ulster'],
-  ['ulster', 'connacht'],
-  // French derbies
-  ['toulouse', 'racing92'],
-  ['stade-francais', 'racing92'],
-  // UK derbies
-  ['bath', 'bristol'],
-  ['exeter', 'bath'],
-  ['saracens', 'harlequins'],
-  ['northampton', 'leicester'],
-  // SA derbies
-  ['stormers', 'sharks'],
-  ['bulls', 'lions'],
-  ['stormers', 'bulls'],
+export type RivalryIntensity = 'fierce' | 'strong' | 'moderate';
+
+interface RivalryPair {
+  teams: [string, string];
+  intensity: RivalryIntensity;
+  label?: string; // e.g. "Interpro", "Le Classique"
+}
+
+const RIVALRY_PAIRS: RivalryPair[] = [
+  // Irish interpros — these are massive, season-defining
+  { teams: ['leinster', 'munster'], intensity: 'fierce', label: 'Interpro' },
+  { teams: ['leinster', 'ulster'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['leinster', 'connacht'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['munster', 'ulster'], intensity: 'fierce', label: 'Interpro' },
+  { teams: ['munster', 'connacht'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['ulster', 'connacht'], intensity: 'moderate', label: 'Interpro' },
+  // French derbies — passionate, local pride
+  { teams: ['toulouse', 'montpellier'], intensity: 'strong', label: 'Le Derby de l\'Occitanie' },
+  { teams: ['toulouse', 'castres'], intensity: 'fierce', label: 'Le Derby du Tarn' },
+  { teams: ['stade-francais', 'racing'], intensity: 'fierce', label: 'Le Derby Parisien' },
+  { teams: ['toulon', 'montpellier'], intensity: 'moderate', label: 'Côte d\'Azur Derby' },
+  { teams: ['bordeaux', 'la-rochelle'], intensity: 'strong', label: 'Le Derby de l\'Atlantique' },
+  { teams: ['clermont', 'lyon'], intensity: 'moderate', label: 'Massif Central Derby' },
+  { teams: ['bayonne', 'pau'], intensity: 'fierce', label: 'Le Derby Basque-Béarnais' },
+  { teams: ['brive', 'clermont'], intensity: 'moderate' },
+  // English derbies
+  { teams: ['bath', 'bristol'], intensity: 'fierce', label: 'West Country Derby' },
+  { teams: ['exeter', 'bath'], intensity: 'strong' },
+  { teams: ['saracens', 'harlequins'], intensity: 'fierce', label: 'London Derby' },
+  { teams: ['northampton', 'leicester'], intensity: 'fierce', label: 'East Midlands Derby' },
+  { teams: ['gloucester', 'worcester'], intensity: 'strong' },
+  { teams: ['newcastle', 'sale'], intensity: 'moderate', label: 'Northern Derby' },
+  // South African derbies
+  { teams: ['stormers', 'sharks'], intensity: 'strong' },
+  { teams: ['bulls', 'stormers'], intensity: 'fierce', label: 'Jukskei Derby' },
+  { teams: ['bulls', 'sharks'], intensity: 'moderate' },
+  // Trans-Tasman
+  { teams: ['crusaders', 'blues'], intensity: 'fierce', label: 'NZ Super Derby' },
+  { teams: ['reds', 'waratahs'], intensity: 'strong', label: 'Australian Derby' },
 ];
 
 export function isDerby(teamId1: string, teamId2: string): boolean {
-  return RIVALRY_PAIRS.some(([a, b]) =>
-    (teamId1.includes(a) && teamId2.includes(b)) ||
-    (teamId1.includes(b) && teamId2.includes(a))
-  );
+  return getRivalry(teamId1, teamId2) !== null;
 }
 
-export function generateDerbyEvent(opponentName: string, week: number): SeasonEvent {
+export function getRivalry(teamId1: string, teamId2: string): RivalryPair | null {
+  return RIVALRY_PAIRS.find(({ teams: [a, b] }) =>
+    (teamId1.includes(a) && teamId2.includes(b)) ||
+    (teamId1.includes(b) && teamId2.includes(a))
+  ) || null;
+}
+
+export function generateDerbyEvent(opponentName: string, week: number, teamId1: string, teamId2: string): SeasonEvent {
+  const rivalry = getRivalry(teamId1, teamId2);
+  const intensity = rivalry?.intensity || 'moderate';
+  const label = rivalry?.label || 'Derby';
+
+  const intensityText: Record<RivalryIntensity, string> = {
+    fierce: 'This is THE fixture. The fans, the board, the players — everyone knows what this means. Lose this and the fallout will be massive. Win it and you\'re a hero.',
+    strong: 'Derby week. Form goes out the window — it\'s about pride, passion, and bragging rights. The fans expect a result.',
+    moderate: 'A rivalry fixture. The fans will be up for this one and a win would give the squad a lift.',
+  };
+
+  const moraleBoost = intensity === 'fierce' ? 8 : intensity === 'strong' ? 5 : 3;
+  const atmosphereBoost = intensity === 'fierce' ? 25 : intensity === 'strong' ? 15 : 8;
+
   return {
     id: generateEventId(),
     type: 'derby_week',
-    severity: 'medium',
+    severity: intensity === 'fierce' ? 'high' : 'medium',
     week,
-    headline: `Derby day: ${opponentName} this weekend`,
-    description: `It\'s derby week. The fans expect a result and the players know what this means. Form goes out the window — it\'s about pride, passion, and bragging rights.`,
+    headline: `${label}: ${opponentName} this weekend`,
+    description: intensityText[intensity],
     source: 'Fans',
     effects: [
-      { target: 'morale', modifier: 5, duration: 1, description: 'Derby adrenaline boost' },
-      { target: 'atmosphere', modifier: 15, duration: 1, description: 'Electric derby atmosphere' }
+      { target: 'morale', modifier: moraleBoost, duration: 1, description: 'Derby adrenaline boost' },
+      { target: 'atmosphere', modifier: atmosphereBoost, duration: 1, description: `${intensity === 'fierce' ? 'Electric' : 'Buzzing'} derby atmosphere` }
     ],
     resolved: false,
   };
