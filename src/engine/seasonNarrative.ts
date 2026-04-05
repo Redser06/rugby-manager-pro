@@ -926,10 +926,10 @@ export interface SeasonNarrativeState {
   eventsTriggeredThisSeason: Set<string>; // track which templates fired
 }
 
-export function initSeasonNarrative(team: Team, leagueSize: number): SeasonNarrativeState {
+export function initSeasonNarrative(team: Team, leagueSize: number, priority: ClubPriority = 'balanced'): SeasonNarrativeState {
   return {
     events: [],
-    board: initBoardState(team, leagueSize),
+    board: initBoardState(team, leagueSize, priority),
     fanAtmosphere: initFanAtmosphere(team),
     refereePool: generateRefereePool(),
     activeEffects: [],
