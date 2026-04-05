@@ -58,22 +58,70 @@ export interface EventChoice {
 
 export type BoardExpectation = 'survival' | 'mid_table' | 'top_half' | 'top_4' | 'title_challenge' | 'title_winners';
 
+export type ClubPriority = 'domestic_first' | 'europe_first' | 'balanced';
+
 export interface BoardState {
   currentExpectation: BoardExpectation;
   confidence: number; // 0-100
   patience: number; // 0-100, how long before they get restless
   preSeasonTarget: BoardExpectation;
-  recentResults: ('W' | 'D' | 'L')[];
+  clubPriority: ClubPriority;
+  recentResults: ResultDetail[];
   consecutiveWins: number;
   consecutiveLosses: number;
   homeRecord: { wins: number; losses: number; draws: number };
   awayRecord: { wins: number; losses: number; draws: number };
+  europeanRecord: { wins: number; losses: number; draws: number };
+  derbyRecord: { wins: number; losses: number; draws: number };
   emergencyLoanAvailable: boolean;
   emergencyLoanUsed: boolean;
+  internationalWindowActive: boolean;
+  keyPlayersAwayCount: number;
+  qualityWinStreak: number; // wins against top-half or higher-rep teams
 }
 
-export function initBoardState(team: Team, leagueSize: number): BoardState {
-  // Board expectation based on reputation
+export interface ResultDetail {
+  result: 'W' | 'D' | 'L';
+  opponentReputation: number;
+  opponentLeaguePosition: number;
+  isDerby: boolean;
+  isEuropean: boolean;
+  isHome: boolean;
+  duringInternationalWindow: boolean;
+  keyPlayersAbsent: number; // how many first-XV players were unavailable
+}
+
+// Classify how impressive a result is based on opponent quality
+function getResultWeight(detail: ResultDetail, teamReputation: number): number {
+  const repDiff = detail.opponentReputation - teamReputation;
+  let weight = 1.0;
+
+  // Beating a much stronger team is worth more
+  if (repDiff > 15) weight = 2.0;        // e.g. Connacht beating Leinster
+  else if (repDiff > 5) weight = 1.5;
+  else if (repDiff < -15) weight = 0.3;  // beating minnows barely counts
+  else if (repDiff < -5) weight = 0.6;
+
+  // Top-4 league position opponent
+  if (detail.opponentLeaguePosition <= 4) weight *= 1.3;
+  else if (detail.opponentLeaguePosition >= 13) weight *= 0.5;
+
+  // Derby results carry massive weight
+  if (detail.isDerby) weight *= 2.0;
+
+  // Away wins are more impressive
+  if (!detail.isHome && detail.result === 'W') weight *= 1.3;
+
+  // International window — board gives leeway
+  if (detail.duringInternationalWindow && detail.keyPlayersAbsent >= 5) {
+    if (detail.result === 'L') weight *= 0.3; // board understands
+    if (detail.result === 'W') weight *= 2.5; // massive credit for winning without stars
+  }
+
+  return weight;
+}
+
+export function initBoardState(team: Team, leagueSize: number, priority: ClubPriority = 'balanced'): BoardState {
   let expectation: BoardExpectation = 'mid_table';
   if (team.reputation >= 85) expectation = 'title_challenge';
   else if (team.reputation >= 75) expectation = 'top_4';
@@ -84,90 +132,285 @@ export function initBoardState(team: Team, leagueSize: number): BoardState {
   return {
     currentExpectation: expectation,
     confidence: 60,
-    patience: team.reputation >= 70 ? 40 : 60, // bigger clubs less patient
+    patience: team.reputation >= 70 ? 40 : 60,
     preSeasonTarget: expectation,
+    clubPriority: priority,
     recentResults: [],
     consecutiveWins: 0,
     consecutiveLosses: 0,
     homeRecord: { wins: 0, losses: 0, draws: 0 },
     awayRecord: { wins: 0, losses: 0, draws: 0 },
+    europeanRecord: { wins: 0, losses: 0, draws: 0 },
+    derbyRecord: { wins: 0, losses: 0, draws: 0 },
     emergencyLoanAvailable: false,
     emergencyLoanUsed: false,
+    internationalWindowActive: false,
+    keyPlayersAwayCount: 0,
+    qualityWinStreak: 0,
   };
 }
 
 export function updateBoardAfterResult(
   board: BoardState,
-  result: 'W' | 'D' | 'L',
-  isHome: boolean,
+  detail: ResultDetail,
+  teamReputation: number,
   leaguePosition: number,
   leagueSize: number
 ): { board: BoardState; events: SeasonEvent[]; } {
   const newBoard = { ...board };
   const events: SeasonEvent[] = [];
-  
-  newBoard.recentResults = [...board.recentResults.slice(-9), result];
-  
-  if (result === 'W') {
+
+  newBoard.recentResults = [...board.recentResults.slice(-9), detail];
+
+  const weight = getResultWeight(detail, teamReputation);
+  const confidenceDelta = detail.result === 'W'
+    ? Math.round(5 * weight)
+    : detail.result === 'L'
+      ? Math.round(-8 * weight)
+      : Math.round(-2 * weight);
+
+  newBoard.confidence = Math.max(0, Math.min(100, board.confidence + confidenceDelta));
+
+  // Track records
+  if (detail.result === 'W') {
     newBoard.consecutiveWins = board.consecutiveWins + 1;
     newBoard.consecutiveLosses = 0;
-    newBoard.confidence = Math.min(100, board.confidence + 5);
-    if (isHome) newBoard.homeRecord.wins++;
+    if (detail.isHome) newBoard.homeRecord.wins++;
     else newBoard.awayRecord.wins++;
-  } else if (result === 'L') {
+
+    // Quality win streak — only counts for strong opponents
+    if (detail.opponentReputation >= teamReputation - 5 || detail.opponentLeaguePosition <= Math.ceil(leagueSize / 2)) {
+      newBoard.qualityWinStreak = board.qualityWinStreak + 1;
+    } else {
+      newBoard.qualityWinStreak = 0; // beating weak teams resets it
+    }
+  } else if (detail.result === 'L') {
     newBoard.consecutiveWins = 0;
     newBoard.consecutiveLosses = board.consecutiveLosses + 1;
-    newBoard.confidence = Math.max(0, board.confidence - 8);
-    if (isHome) newBoard.homeRecord.losses++;
+    newBoard.qualityWinStreak = 0;
+    if (detail.isHome) newBoard.homeRecord.losses++;
     else newBoard.awayRecord.losses++;
   } else {
     newBoard.consecutiveWins = 0;
-    newBoard.consecutiveLosses = 0;
-    newBoard.confidence = Math.max(0, board.confidence - 2);
-    if (isHome) newBoard.homeRecord.draws++;
+    newBoard.qualityWinStreak = 0;
+    if (detail.isHome) newBoard.homeRecord.draws++;
     else newBoard.awayRecord.draws++;
   }
 
-  // Board raises expectations after winning streak
-  if (newBoard.consecutiveWins >= 3) {
-    const expectationLadder: BoardExpectation[] = ['survival', 'mid_table', 'top_half', 'top_4', 'title_challenge', 'title_winners'];
-    const currentIdx = expectationLadder.indexOf(newBoard.currentExpectation);
-    if (currentIdx < expectationLadder.length - 1) {
+  // European record tracking
+  if (detail.isEuropean) {
+    if (detail.result === 'W') newBoard.europeanRecord.wins++;
+    else if (detail.result === 'L') newBoard.europeanRecord.losses++;
+    else newBoard.europeanRecord.draws++;
+  }
+
+  // Derby record tracking
+  if (detail.isDerby) {
+    if (detail.result === 'W') newBoard.derbyRecord.wins++;
+    else if (detail.result === 'L') newBoard.derbyRecord.losses++;
+    else newBoard.derbyRecord.draws++;
+  }
+
+  // ========================================
+  // BOARD EXPECTATION ESCALATION (NUANCED)
+  // ========================================
+  const expectationLadder: BoardExpectation[] = ['survival', 'mid_table', 'top_half', 'top_4', 'title_challenge', 'title_winners'];
+  const currentIdx = expectationLadder.indexOf(newBoard.currentExpectation);
+
+  // Only raise expectations based on QUALITY wins, not just any 3 wins
+  if (newBoard.qualityWinStreak >= 4 && currentIdx < expectationLadder.length - 1) {
+    // Check league position supports the expectation
+    const positionSupportsTitleChallenge = leaguePosition <= Math.ceil(leagueSize / 4);
+    const shouldEscalate = currentIdx < 4 || positionSupportsTitleChallenge;
+
+    if (shouldEscalate) {
       newBoard.currentExpectation = expectationLadder[currentIdx + 1];
       events.push({
         id: generateEventId(),
         type: 'board_expectation',
         severity: 'medium',
-        week: 0, // will be set by caller
+        week: 0,
         headline: `Board raises expectations to "${formatExpectation(newBoard.currentExpectation)}"`,
-        description: `After ${newBoard.consecutiveWins} consecutive wins, the board now expects a ${formatExpectation(newBoard.currentExpectation)} finish. The pressure is on to maintain this form.`,
+        description: `After ${newBoard.qualityWinStreak} quality wins including results against strong opposition, the board now expects a ${formatExpectation(newBoard.currentExpectation)} finish.`,
         source: 'Board',
         effects: [{
           target: 'board_confidence',
           modifier: 10,
           duration: 4,
-          description: 'Board confidence boosted by winning run'
+          description: 'Board confidence boosted by winning run against quality opposition'
+        }],
+        resolved: false,
+      });
+      newBoard.qualityWinStreak = 0; // reset after escalation
+    }
+  }
+
+  // ========================================
+  // DERBY RESULT IMPACT
+  // ========================================
+  if (detail.isDerby) {
+    if (detail.result === 'L') {
+      events.push({
+        id: generateEventId(),
+        type: 'board_expectation',
+        severity: 'high',
+        week: 0,
+        headline: 'Board furious after derby defeat',
+        description: 'Losing the derby is unacceptable to the board and fans. This result alone could define a season. Confidence takes a major hit.',
+        source: 'Board',
+        effects: [{
+          target: 'board_confidence',
+          modifier: -20,
+          duration: 3,
+          description: 'Derby defeat devastates board confidence'
+        }, {
+          target: 'atmosphere',
+          modifier: -15,
+          duration: 2,
+          description: 'Fans devastated after derby loss'
+        }],
+        resolved: false,
+      });
+    } else if (detail.result === 'W') {
+      events.push({
+        id: generateEventId(),
+        type: 'board_expectation',
+        severity: 'low',
+        week: 0,
+        headline: 'Derby glory — Board delighted',
+        description: 'Winning the derby is what the fans live for. Board confidence soars and the atmosphere is electric.',
+        source: 'Board',
+        effects: [{
+          target: 'board_confidence',
+          modifier: 15,
+          duration: 3,
+          description: 'Derby win lifts everyone'
+        }, {
+          target: 'atmosphere',
+          modifier: 20,
+          duration: 2,
+          description: 'Fans buzzing after derby win'
         }],
         resolved: false,
       });
     }
   }
 
-  // Board concern after losing streak
+  // ========================================
+  // INTERNATIONAL WINDOW LENIENCY
+  // ========================================
+  if (detail.duringInternationalWindow && detail.keyPlayersAbsent >= 5) {
+    if (detail.result === 'W') {
+      events.push({
+        id: generateEventId(),
+        type: 'board_expectation',
+        severity: 'low',
+        week: 0,
+        headline: 'Superb result during international window',
+        description: `Winning with ${detail.keyPlayersAbsent} first-choice players away on international duty is exceptional. The board is hugely impressed with squad depth management.`,
+        source: 'Board',
+        effects: [{
+          target: 'board_confidence',
+          modifier: 15,
+          duration: 4,
+          description: 'Board impressed by squad depth'
+        }],
+        resolved: false,
+      });
+    } else if (detail.result === 'L') {
+      events.push({
+        id: generateEventId(),
+        type: 'board_expectation',
+        severity: 'low',
+        week: 0,
+        headline: 'Board understands international window loss',
+        description: `With ${detail.keyPlayersAbsent} first-choice players away, the board accepts this result. No lasting damage to confidence.`,
+        source: 'Board',
+        effects: [{
+          target: 'board_confidence',
+          modifier: -2,
+          duration: 1,
+          description: 'Minimal impact — board understands'
+        }],
+        resolved: false,
+      });
+    }
+  }
+
+  // ========================================
+  // EUROPEAN RESULTS — WEIGHTED BY PRIORITY
+  // ========================================
+  if (detail.isEuropean) {
+    const euroMultiplier = board.clubPriority === 'europe_first' ? 2.0
+      : board.clubPriority === 'balanced' ? 1.0 : 0.5;
+
+    if (detail.result === 'L' && board.clubPriority !== 'domestic_first') {
+      const totalEuroLosses = newBoard.europeanRecord.losses;
+      if (totalEuroLosses >= 3) {
+        events.push({
+          id: generateEventId(),
+          type: 'board_expectation',
+          severity: board.clubPriority === 'europe_first' ? 'critical' : 'high',
+          week: 0,
+          headline: board.clubPriority === 'europe_first'
+            ? 'Board on the brink — European campaign in tatters'
+            : 'Board disappointed with European form',
+          description: board.clubPriority === 'europe_first'
+            ? `With ${totalEuroLosses} European defeats, the board\'s primary objective is failing. This is a sackable run of form in Europe.`
+            : `${totalEuroLosses} European defeats is not what the board expected. European pedigree matters at this club.`,
+          source: 'Board',
+          effects: [{
+            target: 'board_confidence',
+            modifier: Math.round(-15 * euroMultiplier),
+            duration: 4,
+            description: 'European failures hit board confidence hard'
+          }],
+          resolved: false,
+          choices: board.clubPriority === 'europe_first' ? [
+            {
+              id: 'refocus_europe',
+              label: 'Promise to prioritise Europe',
+              description: 'Rest key players for league, go all-out in Europe.',
+              effects: [{ target: 'board_confidence', modifier: 5, duration: 3, description: 'Board sees commitment to European campaign' }]
+            },
+            {
+              id: 'accept_criticism',
+              label: 'Accept the criticism',
+              description: 'Acknowledge poor form and vow to improve.',
+              effects: [{ target: 'morale', modifier: -5, duration: 2, description: 'Admission of failure hits morale' }]
+            }
+          ] : undefined,
+        });
+      }
+    }
+  }
+
+  // ========================================
+  // GENERAL LOSING STREAK (unchanged but with weight)
+  // ========================================
   if (newBoard.consecutiveLosses >= 3) {
+    // Check if losses were against strong teams — board is more lenient
+    const recentLosses = newBoard.recentResults.slice(-3);
+    const avgOpponentRep = recentLosses.reduce((s, r) => s + r.opponentReputation, 0) / recentLosses.length;
+    const toughRun = avgOpponentRep >= teamReputation + 10;
+
     events.push({
       id: generateEventId(),
       type: 'board_expectation',
-      severity: 'high',
+      severity: toughRun ? 'medium' : 'high',
       week: 0,
-      headline: `Board concerned after ${newBoard.consecutiveLosses} straight losses`,
-      description: 'The board have requested a meeting. Results must improve quickly or changes may be considered.',
+      headline: toughRun
+        ? `Board concerned but acknowledges tough fixture run`
+        : `Board concerned after ${newBoard.consecutiveLosses} straight losses`,
+      description: toughRun
+        ? 'The board recognises the difficulty of recent fixtures but still expects a response. Results must improve.'
+        : 'The board have requested a meeting. Results must improve quickly or changes may be considered.',
       source: 'Board',
       effects: [{
         target: 'board_confidence',
-        modifier: -15,
+        modifier: toughRun ? -8 : -15,
         duration: 3,
-        description: 'Board confidence plummeting'
+        description: toughRun ? 'Board patience tested but holding' : 'Board confidence plummeting'
       }],
       resolved: false,
       choices: [
@@ -178,10 +421,12 @@ export function updateBoardAfterResult(
           effects: [{ target: 'board_confidence', modifier: 5, duration: 3, description: 'Temporary reprieve' }]
         },
         {
-          id: 'blame_injuries',
-          label: 'Cite injuries & fixture congestion',
-          description: 'Deflect pressure by highlighting the squad situation.',
-          effects: [{ target: 'board_confidence', modifier: 3, duration: 2, description: 'Board partially appeased' }]
+          id: 'blame_fixtures',
+          label: toughRun ? 'Point to the fixture difficulty' : 'Cite injuries & fixture congestion',
+          description: toughRun
+            ? 'Highlight the quality of opponents faced. Board may accept this reasoning.'
+            : 'Deflect pressure by highlighting the squad situation.',
+          effects: [{ target: 'board_confidence', modifier: toughRun ? 5 : 3, duration: 2, description: 'Board partially appeased' }]
         },
         {
           id: 'request_funds',
@@ -353,7 +598,7 @@ export function generateMediaEvents(
   const ctx: MediaContext = {
     awayLosses: board.awayRecord.losses,
     awayWins: board.awayRecord.wins,
-    recentForm: board.recentResults,
+    recentForm: board.recentResults.map(r => r.result),
     position,
     leagueSize,
     week,
@@ -586,45 +831,83 @@ export function getRefereeTacticalAdvice(ref: MatchReferee): string[] {
 // DERBY & RIVALRY
 // ========================
 
-const RIVALRY_PAIRS: [string, string][] = [
-  // Irish derbies
-  ['leinster', 'munster'],
-  ['leinster', 'connacht'],
-  ['munster', 'ulster'],
-  ['ulster', 'connacht'],
-  // French derbies
-  ['toulouse', 'racing92'],
-  ['stade-francais', 'racing92'],
-  // UK derbies
-  ['bath', 'bristol'],
-  ['exeter', 'bath'],
-  ['saracens', 'harlequins'],
-  ['northampton', 'leicester'],
-  // SA derbies
-  ['stormers', 'sharks'],
-  ['bulls', 'lions'],
-  ['stormers', 'bulls'],
+export type RivalryIntensity = 'fierce' | 'strong' | 'moderate';
+
+interface RivalryPair {
+  teams: [string, string];
+  intensity: RivalryIntensity;
+  label?: string; // e.g. "Interpro", "Le Classique"
+}
+
+const RIVALRY_PAIRS: RivalryPair[] = [
+  // Irish interpros — these are massive, season-defining
+  { teams: ['leinster', 'munster'], intensity: 'fierce', label: 'Interpro' },
+  { teams: ['leinster', 'ulster'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['leinster', 'connacht'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['munster', 'ulster'], intensity: 'fierce', label: 'Interpro' },
+  { teams: ['munster', 'connacht'], intensity: 'strong', label: 'Interpro' },
+  { teams: ['ulster', 'connacht'], intensity: 'moderate', label: 'Interpro' },
+  // French derbies — passionate, local pride
+  { teams: ['toulouse', 'montpellier'], intensity: 'strong', label: 'Le Derby de l\'Occitanie' },
+  { teams: ['toulouse', 'castres'], intensity: 'fierce', label: 'Le Derby du Tarn' },
+  { teams: ['stade-francais', 'racing'], intensity: 'fierce', label: 'Le Derby Parisien' },
+  { teams: ['toulon', 'montpellier'], intensity: 'moderate', label: 'Côte d\'Azur Derby' },
+  { teams: ['bordeaux', 'la-rochelle'], intensity: 'strong', label: 'Le Derby de l\'Atlantique' },
+  { teams: ['clermont', 'lyon'], intensity: 'moderate', label: 'Massif Central Derby' },
+  { teams: ['bayonne', 'pau'], intensity: 'fierce', label: 'Le Derby Basque-Béarnais' },
+  { teams: ['brive', 'clermont'], intensity: 'moderate' },
+  // English derbies
+  { teams: ['bath', 'bristol'], intensity: 'fierce', label: 'West Country Derby' },
+  { teams: ['exeter', 'bath'], intensity: 'strong' },
+  { teams: ['saracens', 'harlequins'], intensity: 'fierce', label: 'London Derby' },
+  { teams: ['northampton', 'leicester'], intensity: 'fierce', label: 'East Midlands Derby' },
+  { teams: ['gloucester', 'worcester'], intensity: 'strong' },
+  { teams: ['newcastle', 'sale'], intensity: 'moderate', label: 'Northern Derby' },
+  // South African derbies
+  { teams: ['stormers', 'sharks'], intensity: 'strong' },
+  { teams: ['bulls', 'stormers'], intensity: 'fierce', label: 'Jukskei Derby' },
+  { teams: ['bulls', 'sharks'], intensity: 'moderate' },
+  // Trans-Tasman
+  { teams: ['crusaders', 'blues'], intensity: 'fierce', label: 'NZ Super Derby' },
+  { teams: ['reds', 'waratahs'], intensity: 'strong', label: 'Australian Derby' },
 ];
 
 export function isDerby(teamId1: string, teamId2: string): boolean {
-  return RIVALRY_PAIRS.some(([a, b]) =>
-    (teamId1.includes(a) && teamId2.includes(b)) ||
-    (teamId1.includes(b) && teamId2.includes(a))
-  );
+  return getRivalry(teamId1, teamId2) !== null;
 }
 
-export function generateDerbyEvent(opponentName: string, week: number): SeasonEvent {
+export function getRivalry(teamId1: string, teamId2: string): RivalryPair | null {
+  return RIVALRY_PAIRS.find(({ teams: [a, b] }) =>
+    (teamId1.includes(a) && teamId2.includes(b)) ||
+    (teamId1.includes(b) && teamId2.includes(a))
+  ) || null;
+}
+
+export function generateDerbyEvent(opponentName: string, week: number, teamId1: string, teamId2: string): SeasonEvent {
+  const rivalry = getRivalry(teamId1, teamId2);
+  const intensity = rivalry?.intensity || 'moderate';
+  const label = rivalry?.label || 'Derby';
+
+  const intensityText: Record<RivalryIntensity, string> = {
+    fierce: 'This is THE fixture. The fans, the board, the players — everyone knows what this means. Lose this and the fallout will be massive. Win it and you\'re a hero.',
+    strong: 'Derby week. Form goes out the window — it\'s about pride, passion, and bragging rights. The fans expect a result.',
+    moderate: 'A rivalry fixture. The fans will be up for this one and a win would give the squad a lift.',
+  };
+
+  const moraleBoost = intensity === 'fierce' ? 8 : intensity === 'strong' ? 5 : 3;
+  const atmosphereBoost = intensity === 'fierce' ? 25 : intensity === 'strong' ? 15 : 8;
+
   return {
     id: generateEventId(),
     type: 'derby_week',
-    severity: 'medium',
+    severity: intensity === 'fierce' ? 'high' : 'medium',
     week,
-    headline: `Derby day: ${opponentName} this weekend`,
-    description: `It\'s derby week. The fans expect a result and the players know what this means. Form goes out the window — it\'s about pride, passion, and bragging rights.`,
+    headline: `${label}: ${opponentName} this weekend`,
+    description: intensityText[intensity],
     source: 'Fans',
     effects: [
-      { target: 'morale', modifier: 5, duration: 1, description: 'Derby adrenaline boost' },
-      { target: 'atmosphere', modifier: 15, duration: 1, description: 'Electric derby atmosphere' }
+      { target: 'morale', modifier: moraleBoost, duration: 1, description: 'Derby adrenaline boost' },
+      { target: 'atmosphere', modifier: atmosphereBoost, duration: 1, description: `${intensity === 'fierce' ? 'Electric' : 'Buzzing'} derby atmosphere` }
     ],
     resolved: false,
   };
@@ -643,10 +926,10 @@ export interface SeasonNarrativeState {
   eventsTriggeredThisSeason: Set<string>; // track which templates fired
 }
 
-export function initSeasonNarrative(team: Team, leagueSize: number): SeasonNarrativeState {
+export function initSeasonNarrative(team: Team, leagueSize: number, priority: ClubPriority = 'balanced'): SeasonNarrativeState {
   return {
     events: [],
-    board: initBoardState(team, leagueSize),
+    board: initBoardState(team, leagueSize, priority),
     fanAtmosphere: initFanAtmosphere(team),
     refereePool: generateRefereePool(),
     activeEffects: [],
@@ -684,7 +967,7 @@ export function processWeeklyNarrative(
 
   // Derby detection
   if (opponentId && opponentName && isDerby(team.id, opponentId)) {
-    newEvents.push(generateDerbyEvent(opponentName, week));
+    newEvents.push(generateDerbyEvent(opponentName, week, team.id, opponentId));
   }
 
   // Add effects from new events
