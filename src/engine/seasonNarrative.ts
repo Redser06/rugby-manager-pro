@@ -308,7 +308,7 @@ const MEDIA_TEMPLATES: { condition: (ctx: MediaContext) => boolean; headline: st
   {
     condition: (ctx) => ctx.injuredFirstChoice >= 4,
     headline: '"Injury crisis deepens" — Squad stretched thin',
-    description: `With ${ctx.injuredFirstChoice} first-choice players sidelined, the media are questioning squad depth. The board may offer emergency measures.`,
+    description: 'Multiple first-choice players are sidelined. The media are questioning squad depth. The board may offer emergency measures.',
     severity: 'high',
     type: 'injury_crisis',
   },
