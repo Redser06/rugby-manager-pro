@@ -122,6 +122,32 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
   const homeDiscipline: TeamDiscipline = { penaltyCount: 0, hasTeamWarning: false, infringementAreas: [] };
   const awayDiscipline: TeamDiscipline = { penaltyCount: 0, hasTeamWarning: false, infringementAreas: [] };
 
+  // Captain-referee & sideline tracking
+  const captainInteractions: CaptainInteraction[] = [];
+  const sidelineInstructions: SidelineInstruction[] = [];
+  let homeRefFrustration = 0;
+  let awayRefFrustration = 0;
+  let homePenaltyLeniency = 0; // accumulated from captain interactions
+  let awayPenaltyLeniency = 0;
+  
+  // Active sideline instruction effects
+  let homeActiveInstructions: SidelineInstruction[] = [];
+  let awayActiveInstructions: SidelineInstruction[] = [];
+
+  // Get captain captaincy stat (use leadership as fallback)
+  function getCaptaincyStat(team: Team): number {
+    // Captain is typically the player with highest leadership
+    const captain = team.players.slice(0, 15).reduce((best, p) => {
+      const leadershipAttr = (p as any).extended?.captaincy || (p as any).extended?.leadership || 50;
+      const bestAttr = (best as any).extended?.captaincy || (best as any).extended?.leadership || 50;
+      return leadershipAttr > bestAttr ? p : best;
+    }, team.players[0]);
+    return (captain as any).extended?.captaincy || 55;
+  }
+  
+  const homeCaptaincy = getCaptaincyStat(homeTeam);
+  const awayCaptaincy = getCaptaincyStat(awayTeam);
+
   // Substitution tracking
   const homeSubsDone: { minute: number; playerOffId: string; playerOnId: string }[] = [];
   const awaySubsDone: { minute: number; playerOffId: string; playerOnId: string }[] = [];
