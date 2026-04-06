@@ -242,7 +242,8 @@ export type EnhancedEventType =
   | 'line_break' | 'offload' | 'big_tackle'
   | 'tmo_review' | 'team_warning'
   | 'phase_play' | 'half_time' | 'full_time'
-  | 'kickoff' | 'dropout';
+  | 'kickoff' | 'dropout'
+  | 'captain_referee' | 'sideline_instruction';
 
 export interface EnhancedMatchEvent {
   id: string;
