@@ -68,6 +68,7 @@ export interface PlayerExtended {
   discipline: number; // 0-100, low = more penalties/cards
   composure: number; // 0-100, performance under pressure
   leadership: number; // 0-100
+  captaincy: number; // 0-100, how well they manage referees, communicate, lead on-field
   bigGamePlayer: boolean; // performs better in high-stakes matches
   
   // Archetype
