@@ -68,6 +68,7 @@ export interface PlayerExtended {
   discipline: number; // 0-100, low = more penalties/cards
   composure: number; // 0-100, performance under pressure
   leadership: number; // 0-100
+  captaincy: number; // 0-100, how well they manage referees, communicate, lead on-field
   bigGamePlayer: boolean; // performs better in high-stakes matches
   
   // Archetype
@@ -256,6 +257,7 @@ export function generatePlayerExtended(age: number, overall: number, nationality
     discipline: 40 + Math.floor(Math.random() * 50),
     composure: isVeteran ? 60 + Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 40),
     leadership: isVeteran ? 50 + Math.floor(Math.random() * 40) : 10 + Math.floor(Math.random() * 30),
+    captaincy: isVeteran ? 40 + Math.floor(Math.random() * 50) : 15 + Math.floor(Math.random() * 35),
     bigGamePlayer: Math.random() < 0.15,
     
     archetype: position ? assignArchetype(position) : 'ball_carrier',

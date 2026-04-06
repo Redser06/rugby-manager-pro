@@ -31,6 +31,8 @@ function getEventIcon(type: EnhancedMatchEvent['type']): string {
     case 'lineout_stolen': return '🤲';
     case 'half_time': case 'full_time': return '⏱️';
     case 'kickoff': return '🏈';
+    case 'captain_referee': return '🗣️';
+    case 'sideline_instruction': return '📋';
     default: return '•';
   }
 }

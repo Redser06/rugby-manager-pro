@@ -242,7 +242,8 @@ export type EnhancedEventType =
   | 'line_break' | 'offload' | 'big_tackle'
   | 'tmo_review' | 'team_warning'
   | 'phase_play' | 'half_time' | 'full_time'
-  | 'kickoff' | 'dropout';
+  | 'kickoff' | 'dropout'
+  | 'captain_referee' | 'sideline_instruction';
 
 export interface EnhancedMatchEvent {
   id: string;
@@ -316,7 +317,74 @@ export interface EnhancedMatch {
   
   homeDiscipline: TeamDiscipline;
   awayDiscipline: TeamDiscipline;
+  
+  // Captain & coaching
+  captainInteractions: CaptainInteraction[];
+  sidelineInstructions: SidelineInstruction[];
 }
+
+// ========================
+// CAPTAIN-REFEREE INTERACTION
+// ========================
+
+export type CaptainApproach = 'respectful' | 'questioning' | 'assertive' | 'frustrated';
+
+export interface CaptainInteraction {
+  minute: number;
+  team: 'home' | 'away';
+  approach: CaptainApproach;
+  topic: 'breakdown_calls' | 'offside_line' | 'scrum_penalties' | 'foul_play' | 'advantage_length' | 'general_clarification';
+  outcome: 'positive' | 'neutral' | 'negative' | 'warning';
+  description: string;
+  effect: {
+    penaltyLeniency: number; // -5 to +5, positive = fewer pens against you
+    cardProtection: number; // 0-3, delays next card
+    refFrustration: number; // 0-100, too much chat annoys the ref
+  };
+}
+
+// ========================
+// SIDELINE COACHING INSTRUCTIONS
+// ========================
+
+export type SidelineInstructionType =
+  | 'slow_tempo' | 'increase_tempo' | 'target_player' | 'defensive_shift'
+  | 'kicking_game' | 'keep_ball_in_hand' | 'ref_awareness' | 'manage_clock'
+  | 'go_for_try' | 'take_the_points' | 'protect_lead' | 'bomb_squad_early';
+
+export interface SidelineInstruction {
+  id: string;
+  minute: number;
+  type: SidelineInstructionType;
+  description: string;
+  deliveredByCaptain: boolean; // captain relays to players
+  captainEffectiveness: number; // 0-100, based on captain's captaincy stat
+  effects: {
+    attackModifier?: number;
+    defenseModifier?: number;
+    kickingModifier?: number;
+    disciplineModifier?: number;
+    tempoModifier?: number;
+    moraleModifier?: number;
+  };
+  expiresMinute: number;
+  acknowledged: boolean;
+}
+
+export const SIDELINE_INSTRUCTIONS: Record<SidelineInstructionType, { label: string; description: string }> = {
+  slow_tempo: { label: 'Slow It Down', description: 'Reduce tempo, keep possession, manage the clock.' },
+  increase_tempo: { label: 'Up The Tempo', description: 'Play faster, quick rucks, stretch the defence.' },
+  target_player: { label: 'Target Weakness', description: 'Focus attacks on a specific defensive weakness.' },
+  defensive_shift: { label: 'Tighten Defence', description: 'Shore up the defensive line, reduce line speed risk.' },
+  kicking_game: { label: 'Kicking Game', description: 'Switch to territorial kicking, contest aerially.' },
+  keep_ball_in_hand: { label: 'Keep Ball In Hand', description: 'Play through hands, avoid kicking, build phases.' },
+  ref_awareness: { label: 'Talk To The Ref', description: 'Captain to speak with referee about specific issues.' },
+  manage_clock: { label: 'Manage The Clock', description: 'Wind down time, slow set pieces, use subs strategically.' },
+  go_for_try: { label: 'Go For The Try', description: 'All-out attack, take risks, width and offloads.' },
+  take_the_points: { label: 'Take The Points', description: 'Kick penalties at goal rather than going to the corner.' },
+  protect_lead: { label: 'Protect The Lead', description: 'Conservative approach, keep possession, avoid turnovers.' },
+  bomb_squad_early: { label: 'Bomb Squad Early', description: 'Bring impact subs on earlier than planned for fresh legs.' },
+};
 
 // ========================
 // COMMENTARY TEMPLATES
@@ -403,5 +471,16 @@ export const COMMENTARY = {
   ],
   fullTime: [
     "Full time! {homeTeam} {homeScore} - {awayTeam} {awayScore}.",
+  ],
+  captainReferee: [
+    "The captain approaches the referee for a word about {topic}.",
+    "Captain pulls the referee aside. A respectful conversation about {topic}.",
+    "The skipper has a word with the ref — {topic} is the concern.",
+    "Captain marches over to the referee, wanting clarity on {topic}.",
+  ],
+  sidelineInstruction: [
+    "Message from the coaching box: {instruction}.",
+    "The water carrier relays a message from the sideline: {instruction}.",
+    "Tactical instruction from the coaching staff: {instruction}.",
   ],
 } as const;

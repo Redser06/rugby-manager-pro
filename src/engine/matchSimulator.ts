@@ -5,6 +5,7 @@ import {
   Referee, REFEREE_POOL, MatchWeather, getWeatherEffects,
   TeamDiscipline, SubstitutionPlan, SubstitutionRule, BenchSplit,
   COMMENTARY, TMOReview,
+  CaptainInteraction, CaptainApproach, SidelineInstruction, SidelineInstructionType, SIDELINE_INSTRUCTIONS,
 } from '@/types/matchEngine';
 import { StaffBonuses } from '@/types/staff';
 import { simulateScrum, simulateLineout, simulateMaul } from './setPieces';
@@ -120,6 +121,32 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
   // Discipline tracking
   const homeDiscipline: TeamDiscipline = { penaltyCount: 0, hasTeamWarning: false, infringementAreas: [] };
   const awayDiscipline: TeamDiscipline = { penaltyCount: 0, hasTeamWarning: false, infringementAreas: [] };
+
+  // Captain-referee & sideline tracking
+  const captainInteractions: CaptainInteraction[] = [];
+  const sidelineInstructions: SidelineInstruction[] = [];
+  let homeRefFrustration = 0;
+  let awayRefFrustration = 0;
+  let homePenaltyLeniency = 0; // accumulated from captain interactions
+  let awayPenaltyLeniency = 0;
+  
+  // Active sideline instruction effects
+  let homeActiveInstructions: SidelineInstruction[] = [];
+  let awayActiveInstructions: SidelineInstruction[] = [];
+
+  // Get captain captaincy stat (use leadership as fallback)
+  function getCaptaincyStat(team: Team): number {
+    // Captain is typically the player with highest leadership
+    const captain = team.players.slice(0, 15).reduce((best, p) => {
+      const leadershipAttr = (p as any).extended?.captaincy || (p as any).extended?.leadership || 50;
+      const bestAttr = (best as any).extended?.captaincy || (best as any).extended?.leadership || 50;
+      return leadershipAttr > bestAttr ? p : best;
+    }, team.players[0]);
+    return (captain as any).extended?.captaincy || 55;
+  }
+  
+  const homeCaptaincy = getCaptaincyStat(homeTeam);
+  const awayCaptaincy = getCaptaincyStat(awayTeam);
 
   // Substitution tracking
   const homeSubsDone: { minute: number; playerOffId: string; playerOnId: string }[] = [];
@@ -768,6 +795,163 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
       // Ruck
       atkStats.rucks.won++;
     }
+
+    // ===== CAPTAIN-REFEREE INTERACTION =====
+    // Captains engage the referee after penalty events or at key moments
+    const shouldCaptainEngage = (team: 'home' | 'away', discipline: TeamDiscipline): boolean => {
+      // More likely when penalties are mounting or after a contentious call
+      if (discipline.penaltyCount > 0 && minute > 10) {
+        const recentPens = discipline.infringementAreas.slice(-3);
+        const repeatedArea = recentPens.length >= 2 && recentPens[recentPens.length - 1] === recentPens[recentPens.length - 2];
+        return repeatedArea || discipline.penaltyCount >= 4 || (discipline.hasTeamWarning && Math.random() < 0.3);
+      }
+      return false;
+    };
+
+    // Home captain interaction
+    if (shouldCaptainEngage('home', awayDiscipline) && Math.random() < 0.12 && captainInteractions.filter(c => c.team === 'home').length < 4) {
+      const topics: CaptainInteraction['topic'][] = ['breakdown_calls', 'offside_line', 'scrum_penalties', 'general_clarification'];
+      const commonArea = homeDiscipline.infringementAreas.slice(-1)[0] || 'breakdown';
+      const topic = commonArea === 'breakdown' ? 'breakdown_calls' : commonArea === 'offside' ? 'offside_line' : commonArea === 'scrum' ? 'scrum_penalties' : randomPick(topics);
+      
+      // Captain's approach depends on captaincy stat and ref frustration
+      let approach: CaptainApproach = 'respectful';
+      if (homeCaptaincy >= 75) approach = 'respectful';
+      else if (homeCaptaincy >= 55) approach = Math.random() < 0.7 ? 'questioning' : 'respectful';
+      else if (homeCaptaincy >= 35) approach = Math.random() < 0.5 ? 'assertive' : 'questioning';
+      else approach = Math.random() < 0.4 ? 'frustrated' : 'assertive';
+
+      // Outcome based on approach + ref strictness + frustration level
+      const refStrictness = referee.strictness;
+      let successChance = (homeCaptaincy / 100) * 0.7;
+      if (approach === 'respectful') successChance += 0.15;
+      else if (approach === 'frustrated') successChance -= 0.25;
+      else if (approach === 'assertive') successChance -= 0.1;
+      successChance -= (homeRefFrustration / 100) * 0.3;
+      successChance -= (refStrictness / 10) * 0.1;
+
+      const outcomeRoll = Math.random();
+      let outcome: CaptainInteraction['outcome'];
+      let penLeniency = 0;
+      let cardProtection = 0;
+      let frustrationDelta = 0;
+
+      if (outcomeRoll < successChance) {
+        outcome = 'positive';
+        penLeniency = 2;
+        cardProtection = 1;
+        frustrationDelta = 5;
+      } else if (outcomeRoll < successChance + 0.3) {
+        outcome = 'neutral';
+        frustrationDelta = 10;
+      } else if (approach === 'frustrated' || homeRefFrustration > 70) {
+        outcome = 'warning';
+        penLeniency = -3;
+        frustrationDelta = 25;
+      } else {
+        outcome = 'negative';
+        penLeniency = -1;
+        frustrationDelta = 15;
+      }
+
+      homeRefFrustration = Math.min(100, homeRefFrustration + frustrationDelta);
+      homePenaltyLeniency += penLeniency;
+
+      const descriptions: Record<CaptainApproach, string[]> = {
+        respectful: ['The captain calmly asks the referee for clarification on recent calls.', 'A measured word from the skipper to the referee.'],
+        questioning: ['The captain questions the referee\'s interpretation of the breakdown.', 'The captain wants to understand the ref\'s threshold today.'],
+        assertive: ['The captain firmly asks the referee to look at the opposition\'s infringements.', 'A pointed conversation between captain and referee.'],
+        frustrated: ['The captain shows visible frustration with the officiating.', 'An animated exchange between captain and referee — tempers fraying.'],
+      };
+
+      const interaction: CaptainInteraction = {
+        minute,
+        team: 'home',
+        approach,
+        topic,
+        outcome,
+        description: randomPick(descriptions[approach]),
+        effect: { penaltyLeniency: penLeniency, cardProtection, refFrustration: homeRefFrustration },
+      };
+      captainInteractions.push(interaction);
+
+      const topicLabels: Record<string, string> = {
+        breakdown_calls: 'breakdown decisions',
+        offside_line: 'the offside line',
+        scrum_penalties: 'scrum penalties',
+        foul_play: 'foul play concerns',
+        advantage_length: 'advantage duration',
+        general_clarification: 'general calls',
+      };
+
+      addEvent(minute, 'captain_referee', 'home',
+        `Captain speaks with referee about ${topicLabels[topic]}`,
+        formatCommentary(randomPick([...COMMENTARY.captainReferee]), { topic: topicLabels[topic] }),
+        50, { isKey: outcome === 'warning' }
+      );
+
+      if (outcome === 'warning') {
+        addEvent(minute, 'team_warning', 'home',
+          'Referee warns captain — too much backchat',
+          'The referee is not happy with the captain\'s tone. One more word and there could be consequences.',
+          50, { isKey: true }
+        );
+      }
+    }
+
+    // ===== SIDELINE INSTRUCTIONS (automated tactical adjustments) =====
+    // Expire old instructions
+    homeActiveInstructions = homeActiveInstructions.filter(i => i.expiresMinute > minute);
+    awayActiveInstructions = awayActiveInstructions.filter(i => i.expiresMinute > minute);
+
+    // Auto-generate sideline instructions based on match state
+    if (minute % 10 === 0 && minute > 0 && minute < 80) {
+      const scoreDiff = homeScore - awayScore;
+      
+      // Home team coaching AI
+      let instruction: SidelineInstructionType | null = null;
+      if (minute >= 65 && scoreDiff > 0 && scoreDiff <= 10) instruction = 'protect_lead';
+      else if (minute >= 65 && scoreDiff < -7) instruction = 'go_for_try';
+      else if (minute >= 55 && homeDiscipline.penaltyCount >= 5) instruction = 'ref_awareness';
+      else if (minute >= 50 && scoreDiff > 14) instruction = 'manage_clock';
+      else if (minute >= 60 && scoreDiff < -3 && scoreDiff > -14) instruction = 'increase_tempo';
+      else if (minute === 40 && scoreDiff < 0) instruction = 'keep_ball_in_hand';
+
+      if (instruction && !homeActiveInstructions.some(i => i.type === instruction)) {
+        const captainEffectiveness = Math.min(100, homeCaptaincy + Math.floor(Math.random() * 20) - 10);
+        const effectMultiplier = captainEffectiveness / 100;
+
+        const effects: SidelineInstruction['effects'] = {};
+        switch (instruction) {
+          case 'protect_lead': effects.defenseModifier = 5 * effectMultiplier; effects.attackModifier = -3; break;
+          case 'go_for_try': effects.attackModifier = 8 * effectMultiplier; effects.defenseModifier = -4; break;
+          case 'ref_awareness': effects.disciplineModifier = 10 * effectMultiplier; break;
+          case 'manage_clock': effects.tempoModifier = -5; effects.moraleModifier = 3 * effectMultiplier; break;
+          case 'increase_tempo': effects.tempoModifier = 8 * effectMultiplier; effects.attackModifier = 3; break;
+          case 'keep_ball_in_hand': effects.attackModifier = 5 * effectMultiplier; effects.kickingModifier = -5; break;
+        }
+
+        const instr: SidelineInstruction = {
+          id: generateId(),
+          minute,
+          type: instruction,
+          description: (SIDELINE_INSTRUCTIONS as any)[instruction]?.description || instruction,
+          deliveredByCaptain: true,
+          captainEffectiveness,
+          effects,
+          expiresMinute: minute + 15,
+          acknowledged: captainEffectiveness > 40,
+        };
+        sidelineInstructions.push(instr);
+        homeActiveInstructions.push(instr);
+
+        addEvent(minute, 'sideline_instruction', 'home',
+          `Coaching instruction: ${(SIDELINE_INSTRUCTIONS as any)[instruction]?.label || instruction}`,
+          formatCommentary(randomPick([...COMMENTARY.sidelineInstruction]), { instruction: (SIDELINE_INSTRUCTIONS as any)[instruction]?.label || instruction }),
+          50
+        );
+      }
+    }
   }
 
   // Full time
@@ -855,6 +1039,8 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
     motmId: motm.playerId,
     motmName: motm.playerName,
     homeDiscipline, awayDiscipline,
+    captainInteractions,
+    sidelineInstructions,
   };
 }
 
