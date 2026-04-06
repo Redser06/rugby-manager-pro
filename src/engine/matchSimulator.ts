@@ -1039,6 +1039,8 @@ export function simulateFullMatch(config: MatchConfig): EnhancedMatch {
     motmId: motm.playerId,
     motmName: motm.playerName,
     homeDiscipline, awayDiscipline,
+    captainInteractions,
+    sidelineInstructions,
   };
 }
 
