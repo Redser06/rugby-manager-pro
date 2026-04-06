@@ -472,4 +472,15 @@ export const COMMENTARY = {
   fullTime: [
     "Full time! {homeTeam} {homeScore} - {awayTeam} {awayScore}.",
   ],
+  captainReferee: [
+    "The captain approaches the referee for a word about {topic}.",
+    "Captain pulls the referee aside. A respectful conversation about {topic}.",
+    "The skipper has a word with the ref — {topic} is the concern.",
+    "Captain marches over to the referee, wanting clarity on {topic}.",
+  ],
+  sidelineInstruction: [
+    "Message from the coaching box: {instruction}.",
+    "The water carrier relays a message from the sideline: {instruction}.",
+    "Tactical instruction from the coaching staff: {instruction}.",
+  ],
 } as const;
