@@ -5,7 +5,7 @@ import {
   Referee, REFEREE_POOL, MatchWeather, getWeatherEffects,
   TeamDiscipline, SubstitutionPlan, SubstitutionRule, BenchSplit,
   COMMENTARY, TMOReview,
-  CaptainInteraction, CaptainApproach, SidelineInstruction, SidelineInstructionType,
+  CaptainInteraction, CaptainApproach, SidelineInstruction, SidelineInstructionType, SIDELINE_INSTRUCTIONS,
 } from '@/types/matchEngine';
 import { StaffBonuses } from '@/types/staff';
 import { simulateScrum, simulateLineout, simulateMaul } from './setPieces';
