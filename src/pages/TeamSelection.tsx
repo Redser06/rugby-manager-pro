@@ -150,6 +150,7 @@ export default function TeamSelection() {
   const navigate = useNavigate();
   const { selectTeam } = useGame();
   const { isAuthenticated } = useAuth();
+  const { mode, skin, toggleMode, toggleSkin } = useTheme();
   const [generatingCoaches, setGeneratingCoaches] = useState(false);
 
   const handleTeamSelect = async (teamId: string) => {
