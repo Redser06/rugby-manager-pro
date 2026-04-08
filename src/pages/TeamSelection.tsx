@@ -186,6 +186,12 @@ export default function TeamSelection() {
               <p className="text-muted-foreground text-sm">Choose your team and lead them to glory</p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleMode} title={mode === 'light' ? 'Dark mode' : 'Light mode'}>
+                {mode === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+              <Button variant={skin === 'broadcast' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={toggleSkin} title="Broadcast Mode">
+                <Tv className="h-4 w-4" />
+              </Button>
               {isAuthenticated ? (
                 <Link to="/coach">
                   <Button variant="outline" size="sm">
