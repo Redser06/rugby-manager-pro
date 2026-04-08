@@ -71,19 +71,21 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <GameProvider>
-          <TransferProvider>
-            <SixNationsProvider>
-              <AppRoutes />
-            </SixNationsProvider>
-          </TransferProvider>
-        </GameProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <GameProvider>
+            <TransferProvider>
+              <SixNationsProvider>
+                <AppRoutes />
+              </SixNationsProvider>
+            </TransferProvider>
+          </GameProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
