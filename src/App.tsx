@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GameProvider, useGame } from "@/contexts/GameContext";
 import { TransferProvider } from "@/contexts/TransferContext";
 import { SixNationsProvider } from "@/contexts/SixNationsContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { GameLayout } from "@/components/GameLayout";
 import TeamSelection from "./pages/TeamSelection";
 import Dashboard from "./pages/Dashboard";
@@ -70,19 +71,21 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <GameProvider>
-          <TransferProvider>
-            <SixNationsProvider>
-              <AppRoutes />
-            </SixNationsProvider>
-          </TransferProvider>
-        </GameProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <GameProvider>
+            <TransferProvider>
+              <SixNationsProvider>
+                <AppRoutes />
+              </SixNationsProvider>
+            </TransferProvider>
+          </GameProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

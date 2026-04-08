@@ -140,6 +140,78 @@
   }
 }
 
+/* Broadcast Mode Skin */
+@layer base {
+  .broadcast {
+    --background: 218 35% 12%;
+    --foreground: 210 20% 95%;
+
+    --card: 218 30% 16% / 0.9;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 218 30% 14% / 0.95;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 218 25% 22% / 0.8;
+    --secondary-foreground: 210 15% 85%;
+
+    --muted: 218 25% 20% / 0.6;
+    --muted-foreground: 210 15% 60%;
+
+    --accent: 210 100% 55% / 0.2;
+    --accent-foreground: 210 100% 70%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 218 25% 25% / 0.6;
+    --input: 218 25% 20% / 0.7;
+    --ring: 210 100% 55%;
+
+    --glass-blur: 20px;
+    --glass-saturate: 160%;
+    --glass-border: 210 100% 50% / 0.15;
+    --glass-shadow: 0 8px 32px 0 hsl(218 35% 0% / 0.4);
+
+    --sidebar-background: 218 35% 10% / 0.95;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 100% 55% / 0.15;
+    --sidebar-accent-foreground: 210 100% 70%;
+    --sidebar-border: 210 100% 50% / 0.1;
+    --sidebar-ring: 210 100% 55%;
+    --sidebar: 218 35% 10% / 0.95;
+
+    --chart-1: 210 100% 55%;
+    --chart-2: 190 90% 50%;
+    --chart-3: 170 80% 45%;
+    --chart-4: 45 100% 55%;
+    --chart-5: 0 85% 55%;
+
+    --shadow-sm: 0 2px 8px -2px hsl(218 35% 0% / 0.3);
+    --shadow-md: 0 4px 16px -4px hsl(218 35% 0% / 0.35);
+    --shadow-lg: 0 8px 24px -6px hsl(218 35% 0% / 0.4);
+  }
+
+  .broadcast body {
+    background-image:
+      radial-gradient(at 10% 20%, hsl(210 100% 55% / 0.12) 0px, transparent 50%),
+      radial-gradient(at 90% 80%, hsl(190 90% 50% / 0.08) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, hsl(218 35% 8% / 0.9) 0px, transparent 80%);
+  }
+
+  .broadcast.dark {
+    --background: 218 40% 7%;
+    --card: 218 35% 11% / 0.9;
+    --sidebar-background: 218 40% 6% / 0.98;
+    --sidebar: 218 40% 6% / 0.98;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
