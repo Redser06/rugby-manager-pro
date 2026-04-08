@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +23,6 @@ import {
   Swords, 
   Trophy, 
   Play,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -37,7 +37,11 @@ import {
   Save,
   Globe,
   Flag,
-  GraduationCap
+  GraduationCap,
+  Sun,
+  Moon,
+  Tv,
+  Monitor
 } from 'lucide-react';
 
 const menuItems = [
@@ -63,6 +67,7 @@ export function AppSidebar() {
   const { getMyTeam } = useGame();
   const { state, toggleSidebar } = useSidebar();
   const { isAuthenticated } = useAuth();
+  const { mode, skin, toggleMode, toggleSkin } = useTheme();
   const team = getMyTeam();
   const isCollapsed = state === 'collapsed';
 
@@ -125,35 +130,72 @@ export function AppSidebar() {
               <Badge variant="default">{team.shortName}</Badge>
               <span className="text-sm font-medium truncate">{team.name}</span>
             </div>
-          <p className="text-xs text-muted-foreground mt-1">{team.league}</p>
-        </div>
-      )}
-      {!isCollapsed && (
-        <div className="space-y-1 mt-2">
-          <Link to="/coach">
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              {isAuthenticated ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save / Load
-                </>
-              ) : (
-                <>
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  Sign In
-                </>
-              )}
+            <p className="text-xs text-muted-foreground mt-1">{team.league}</p>
+          </div>
+        )}
+
+        {/* Theme toggles */}
+        {!isCollapsed && (
+          <div className="flex gap-1 mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 justify-center gap-1.5 text-xs"
+              onClick={toggleMode}
+              title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {mode === 'light' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+              {mode === 'light' ? 'Dark' : 'Light'}
             </Button>
-          </Link>
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <LogOut className="h-4 w-4 mr-2" />
-              Change Team
+            <Button
+              variant={skin === 'broadcast' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1 justify-center gap-1.5 text-xs"
+              onClick={toggleSkin}
+              title={skin === 'default' ? 'Switch to Broadcast Mode' : 'Switch to Default Mode'}
+            >
+              {skin === 'broadcast' ? <Monitor className="h-3.5 w-3.5" /> : <Tv className="h-3.5 w-3.5" />}
+              {skin === 'broadcast' ? 'Default' : 'Broadcast'}
             </Button>
-          </Link>
-        </div>
-      )}
-    </SidebarFooter>
-  </Sidebar>
-);
+          </div>
+        )}
+        {isCollapsed && (
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 mx-auto" onClick={toggleMode}>
+              {mode === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Button>
+            <Button variant={skin === 'broadcast' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 mx-auto" onClick={toggleSkin}>
+              <Tv className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {!isCollapsed && (
+          <div className="space-y-1 mt-2">
+            <Link to="/coach">
+              <Button variant="ghost" size="sm" className="w-full justify-start">
+                {isAuthenticated ? (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save / Load
+                  </>
+                ) : (
+                  <>
+                    <UserCircle className="h-4 w-4 mr-2" />
+                    Sign In
+                  </>
+                )}
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="w-full justify-start">
+                <LogOut className="h-4 w-4 mr-2" />
+                Change Team
+              </Button>
+            </Link>
+          </div>
+        )}
+      </SidebarFooter>
+    </Sidebar>
+  );
 }
