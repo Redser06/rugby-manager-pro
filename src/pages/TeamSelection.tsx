@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { LEAGUES } from '@/data/leagues';
 import { generateAllAICoaches } from '@/data/coachGenerator';
 import { SixNationsNation, SIX_NATIONS_LIST, NATIONAL_VENUES, NATIONAL_REPUTATIONS } from '@/types/sixNations';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { Team } from '@/types/game';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
@@ -22,222 +19,271 @@ const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'France': '🇫🇷',
 };
 
+// League accent colors for the left border
+const LEAGUE_COLORS: Record<string, string> = {
+  'URC': 'from-blue-500 to-blue-700',
+  'Gallagher Premiership': 'from-emerald-500 to-emerald-700',
+  'Top 14': 'from-red-500 to-red-700',
+  'Super Rugby Pacific': 'from-amber-500 to-amber-700',
+};
+
+const LEAGUE_BORDER_COLORS: Record<string, string> = {
+  'URC': 'border-l-blue-500',
+  'Gallagher Premiership': 'border-l-emerald-500',
+  'Top 14': 'border-l-red-500',
+  'Super Rugby Pacific': 'border-l-amber-500',
+};
+
+function TeamCard({ team, onClick, disabled, leagueId }: { team: Team; onClick: () => void; disabled: boolean; leagueId: string }) {
+  const borderColor = LEAGUE_BORDER_COLORS[leagueId] || 'border-l-primary';
+  
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`group relative flex-shrink-0 w-[280px] rounded-xl border-l-4 ${borderColor} bg-card/80 backdrop-blur-sm border border-border/50 p-4 text-left transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:border-primary/50 hover:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+    >
+      {/* Reputation badge - top right */}
+      <div className="absolute top-3 right-3">
+        <div className="flex items-center gap-1 bg-primary/10 rounded-full px-2.5 py-1">
+          <Star className="w-3.5 h-3.5 text-primary" />
+          <span className="text-sm font-bold text-primary">{team.reputation}</span>
+        </div>
+      </div>
+
+      {/* Team name and short code */}
+      <div className="mb-3 pr-16">
+        <h3 className="font-bold text-foreground text-base leading-tight group-hover:text-primary transition-colors">
+          {team.name}
+        </h3>
+        <Badge variant="outline" className="mt-1 text-[10px] font-mono">{team.shortName}</Badge>
+      </div>
+
+      {/* Stats grid */}
+      <div className="space-y-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3 h-3 text-muted-foreground/60" />
+          <span className="truncate">{team.homeGround}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-3 h-3 text-muted-foreground/60" />
+            <span>Squad</span>
+          </div>
+          <span className="font-medium text-foreground">{team.players.length}</span>
+        </div>
+      </div>
+
+      {/* Reputation bar */}
+      <div className="mt-3">
+        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
+            style={{ width: `${team.reputation}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 rounded-xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    </button>
+  );
+}
+
+function HorizontalScrollRow({ title, teams, leagueId, onTeamSelect, disabled, gradient }: {
+  title: string;
+  teams: Team[];
+  leagueId: string;
+  onTeamSelect: (teamId: string) => void;
+  disabled: boolean;
+  gradient: string;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    const amount = 300;
+    scrollRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="group/row">
+      {/* League header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-3">
+          <div className={`h-6 w-1.5 rounded-full bg-gradient-to-b ${gradient}`} />
+          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          <Badge variant="secondary" className="text-[10px]">{teams.length} teams</Badge>
+        </div>
+        <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => scroll('left')}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => scroll('right')}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Scrollable row */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {teams.map(team => (
+          <TeamCard
+            key={team.id}
+            team={team}
+            leagueId={leagueId}
+            onClick={() => onTeamSelect(team.id)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TeamSelection() {
   const navigate = useNavigate();
-  const { selectTeam, resetGame } = useGame();
-  const { isAuthenticated, user } = useAuth();
-  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
-  const [showNationalTeams, setShowNationalTeams] = useState(false);
+  const { selectTeam } = useGame();
+  const { isAuthenticated } = useAuth();
   const [generatingCoaches, setGeneratingCoaches] = useState(false);
 
   const handleTeamSelect = async (teamId: string) => {
     setGeneratingCoaches(true);
-    
-    // Generate AI coaches for all teams except the selected one
-    // These are stored in the game state, not in the database
-    // The ai_coaches table is read-only reference data
     const allTeams = LEAGUES.flatMap(l => l.teams);
     const otherTeams = allTeams.filter(t => t.id !== teamId);
-    const aiCoaches = generateAllAICoaches(otherTeams.map(t => ({ id: t.id, reputation: t.reputation })));
-    
-    // AI coaches are managed in local game state, not persisted to database
-    // The database ai_coaches table is for shared reference data only
-    
+    generateAllAICoaches(otherTeams.map(t => ({ id: t.id, reputation: t.reputation })));
     selectTeam(teamId);
     setGeneratingCoaches(false);
     navigate('/dashboard');
   };
 
-  const filteredTeams = selectedLeague 
-    ? LEAGUES.find(l => l.id === selectedLeague)?.teams || []
-    : LEAGUES.flatMap(l => l.teams);
+  const handleNationSelect = (nation: SixNationsNation) => {
+    const firstTeam = LEAGUES[0].teams[0];
+    selectTeam(firstTeam.id);
+    navigate('/six-nations', { state: { autoNation: nation } });
+  };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header with auth */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Select Your Team</h1>
-            <p className="text-muted-foreground">Choose a team to manage and lead to glory</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <Link to="/coach">
-                <Button variant="outline">
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  Coach Profile
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/auth">
-                <Button variant="outline">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In to Save
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Mode Toggle: Club or National */}
-        <div className="flex flex-wrap gap-2 justify-center mb-6">
-          <Button
-            variant={!showNationalTeams && selectedLeague === null ? 'default' : 'outline'}
-            onClick={() => { setShowNationalTeams(false); setSelectedLeague(null); }}
-          >
-            All Leagues
-          </Button>
-          {LEAGUES.map(league => (
-            <Button
-              key={league.id}
-              variant={!showNationalTeams && selectedLeague === league.id ? 'default' : 'outline'}
-              onClick={() => { setShowNationalTeams(false); setSelectedLeague(league.id); }}
-            >
-              {league.name}
-            </Button>
-          ))}
-
-          <Separator orientation="vertical" className="h-8 mx-1 hidden sm:block" />
-
-          <Button
-            variant={showNationalTeams ? 'default' : 'outline'}
-            onClick={() => setShowNationalTeams(true)}
-            className="gap-2"
-          >
-            <Flag className="h-4 w-4" />
-            Six Nations
-          </Button>
-        </div>
-
-        {/* National Teams Grid */}
-        {showNationalTeams && (
-          <div className="space-y-4 mb-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Choose a national team to coach through the Six Nations Championship
-              </p>
+    <div className="min-h-screen bg-background">
+      {/* Hero header */}
+      <div className="relative overflow-hidden border-b border-border/30">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4" />
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">Rugby Manager</h1>
+              </div>
+              <p className="text-muted-foreground text-sm">Choose your team and lead them to glory</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SIX_NATIONS_LIST.map(nation => (
-                <Card
-                  key={nation}
-                  className="cursor-pointer transition-all hover:shadow-lg hover:border-primary group"
-                  onClick={() => {
-                    // Select the first club team to initialize game state, then navigate to six nations
-                    const firstTeam = LEAGUES[0].teams[0];
-                    selectTeam(firstTeam.id);
-                    navigate('/six-nations', { state: { autoNation: nation } });
-                  }}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors flex items-center gap-2">
-                        <span className="text-2xl">{FLAG_EMOJI[nation]}</span>
-                        {nation}
-                      </CardTitle>
-                      <Badge variant="secondary">
-                        <Trophy className="h-3 w-3 mr-1" />
-                        National
-                      </Badge>
-                    </div>
-                    <CardDescription className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {NATIONAL_VENUES[nation]}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Users className="w-4 h-4" />
-                          Competition
-                        </span>
-                        <span className="font-medium">Six Nations</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Star className="w-4 h-4" />
-                          Reputation
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-20 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${NATIONAL_REPUTATIONS[nation]}%` }}
-                            />
-                          </div>
-                          <span className="font-medium text-xs">{NATIONAL_REPUTATIONS[nation]}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="flex items-center gap-2">
+              {isAuthenticated ? (
+                <Link to="/coach">
+                  <Button variant="outline" size="sm">
+                    <UserCircle className="h-4 w-4 mr-2" />
+                    Coach Profile
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="outline" size="sm">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In to Save
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-8">
+        {/* Loading overlay */}
+        {generatingCoaches && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+              <p className="text-sm text-muted-foreground">Setting up your season...</p>
             </div>
           </div>
         )}
 
-        {/* Club Teams Grid */}
-        {!showNationalTeams && (
-          <ScrollArea className="h-[calc(100vh-250px)]">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTeams.map(team => (
-                <Card 
-                  key={team.id} 
-                  className={`cursor-pointer transition-all hover:shadow-lg hover:border-primary group ${generatingCoaches ? 'pointer-events-none opacity-50' : ''}`}
-                  onClick={() => handleTeamSelect(team.id)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                        {team.name}
-                      </CardTitle>
-                      <Badge variant="outline">{team.shortName}</Badge>
+        {/* Club leagues - horizontal scroll rows */}
+        {LEAGUES.map(league => (
+          <HorizontalScrollRow
+            key={league.id}
+            title={league.name}
+            teams={league.teams}
+            leagueId={league.name}
+            onTeamSelect={handleTeamSelect}
+            disabled={generatingCoaches}
+            gradient={LEAGUE_COLORS[league.name] || 'from-primary to-primary/70'}
+          />
+        ))}
+
+        {/* Six Nations section */}
+        <div className="group/row">
+          <div className="flex items-center gap-3 mb-3 px-1">
+            <div className="h-6 w-1.5 rounded-full bg-gradient-to-b from-green-500 to-green-700" />
+            <h2 className="text-lg font-bold text-foreground">Six Nations</h2>
+            <Badge variant="secondary" className="text-[10px]">International</Badge>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+            {SIX_NATIONS_LIST.map(nation => (
+              <button
+                key={nation}
+                onClick={() => handleNationSelect(nation)}
+                className="group flex-shrink-0 w-[280px] rounded-xl border-l-4 border-l-green-500 bg-card/80 backdrop-blur-sm border border-border/50 p-4 text-left transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:border-primary/50 hover:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <div className="absolute top-3 right-3">
+                  <div className="flex items-center gap-1 bg-primary/10 rounded-full px-2.5 py-1">
+                    <Star className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-sm font-bold text-primary">{NATIONAL_REPUTATIONS[nation]}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{FLAG_EMOJI[nation]}</span>
+                  <div>
+                    <h3 className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{nation}</h3>
+                    <Badge variant="outline" className="mt-0.5 text-[10px]">
+                      <Flag className="w-2.5 h-2.5 mr-1" />
+                      National
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-muted-foreground/60" />
+                    <span>{NATIONAL_VENUES[nation]}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Trophy className="w-3 h-3 text-muted-foreground/60" />
+                      <span>Competition</span>
                     </div>
-                    <CardDescription className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {team.homeGround}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Users className="w-4 h-4" />
-                          Squad Size
-                        </span>
-                        <span className="font-medium">{team.players.length}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Trophy className="w-4 h-4" />
-                          League
-                        </span>
-                        <span className="font-medium">{team.league}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Star className="w-4 h-4" />
-                          Reputation
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <div className="h-2 w-20 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${team.reputation}%` }}
-                            />
-                          </div>
-                          <span className="font-medium text-xs">{team.reputation}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+                    <span className="font-medium text-foreground">Six Nations</span>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full"
+                      style={{ width: `${NATIONAL_REPUTATIONS[nation]}%` }}
+                    />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
