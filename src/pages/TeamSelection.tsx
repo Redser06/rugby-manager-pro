@@ -2,12 +2,13 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGame } from '@/contexts/GameContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { LEAGUES } from '@/data/leagues';
 import { generateAllAICoaches } from '@/data/coachGenerator';
 import { SixNationsNation, SIX_NATIONS_LIST, NATIONAL_VENUES, NATIONAL_REPUTATIONS } from '@/types/sixNations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Zap, Sun, Moon, Tv } from 'lucide-react';
 import { Team } from '@/types/game';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
