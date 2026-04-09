@@ -9,7 +9,7 @@ import { SixNationsNation, SIX_NATIONS_LIST, NATIONAL_VENUES, NATIONAL_REPUTATIO
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Sun, Moon, Tv } from 'lucide-react';
-import rugbyBallIcon from '@/assets/rugby-ball-icon.png';
+import { RugbyBallLogo } from '@/components/RugbyBallLogo';
 import { Team } from '@/types/game';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
