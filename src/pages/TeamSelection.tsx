@@ -8,7 +8,8 @@ import { generateAllAICoaches } from '@/data/coachGenerator';
 import { SixNationsNation, SIX_NATIONS_LIST, NATIONAL_VENUES, NATIONAL_REPUTATIONS } from '@/types/sixNations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Zap, Sun, Moon, Tv } from 'lucide-react';
+import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Sun, Moon, Tv } from 'lucide-react';
+import rugbyBallIcon from '@/assets/rugby-ball-icon.png';
 import { Team } from '@/types/game';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {

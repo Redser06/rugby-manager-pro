@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import rugbyBallIcon from '@/assets/rugby-ball-icon.png';
 import { useGame } from '@/contexts/GameContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
