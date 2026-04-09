@@ -179,7 +179,7 @@ export default function TeamSelection() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-4 mb-2">
-                <img src={rugbyBallIcon} alt="Rugby ball" width={512} height={512} className="w-16 h-16 object-contain drop-shadow-lg" />
+                <RugbyBallLogo className="w-14 h-14 drop-shadow-lg" />
                 <div>
                   <h1 className="text-4xl font-extrabold text-foreground tracking-tight">On the Gain Line</h1>
                   <p className="text-xs text-muted-foreground font-semibold tracking-widest uppercase mt-0.5">Rugby's head coach game simulator</p>

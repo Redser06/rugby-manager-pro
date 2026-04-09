@@ -78,7 +78,7 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <img src={rugbyBallIcon} alt="Rugby ball" width={32} height={32} className="w-8 h-8 object-contain" />
+              <RugbyBallLogo className="w-8 h-8" />
               <div>
                 <h2 className="font-bold text-sm leading-tight">On the Gain Line</h2>
                 <p className="text-xs text-muted-foreground">Season 1</p>
