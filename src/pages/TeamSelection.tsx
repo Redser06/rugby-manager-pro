@@ -178,14 +178,14 @@ export default function TeamSelection() {
         <div className="relative max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <img src={rugbyBallIcon} alt="Rugby ball" width={40} height={40} className="w-10 h-10 object-contain" />
+              <div className="flex items-center gap-4 mb-2">
+                <img src={rugbyBallIcon} alt="Rugby ball" width={512} height={512} className="w-16 h-16 object-contain drop-shadow-lg" />
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground tracking-tight">On the Gain Line</h1>
-                  <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase">Rugby's head coach game simulator</p>
+                  <h1 className="text-4xl font-extrabold text-foreground tracking-tight">On the Gain Line</h1>
+                  <p className="text-xs text-muted-foreground font-semibold tracking-widest uppercase mt-0.5">Rugby's head coach game simulator</p>
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm">Choose your team and lead them to glory</p>
+              <p className="text-muted-foreground text-sm mt-1 ml-20">Choose your team and lead them to glory</p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleMode} title={mode === 'light' ? 'Dark mode' : 'Light mode'}>
