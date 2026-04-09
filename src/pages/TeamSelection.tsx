@@ -178,10 +178,11 @@ export default function TeamSelection() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-primary-foreground" />
+                <img src={rugbyBallIcon} alt="Rugby ball" width={40} height={40} className="w-10 h-10 object-contain" />
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground tracking-tight">On the Gain Line</h1>
+                  <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase">Rugby's head coach game simulator</p>
                 </div>
-                <h1 className="text-3xl font-bold text-foreground tracking-tight">Rugby Manager</h1>
               </div>
               <p className="text-muted-foreground text-sm">Choose your team and lead them to glory</p>
             </div>
