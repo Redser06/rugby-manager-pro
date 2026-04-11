@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { SeasonSchedule, Fixture } from '@/types/fixture';
-import { generateSeasonFixtures, getWeekFixtures, canTeamTrain } from '@/utils/fixtureGenerator';
+import { getWeekFixtures, canTeamTrain } from '@/utils/fixtureGenerator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ShareDialog } from '@/components/share/ShareDialog';
 import { SeasonEventsPanel } from '@/components/narrative/SeasonEventsPanel';
+import { useToast } from '@/hooks/use-toast';
 import {
   initSeasonNarrative, processWeeklyNarrative, assignReferee,
   SeasonNarrativeState, MatchReferee
