@@ -1,88 +1,88 @@
 
-# Match Engine & Game Systems Overhaul
+# Playtest Report: "On the Gain Line" — Leinster Coach Simulation
 
-## Phase 1: Core Types & Data Models
-Extend the type system to support all new mechanics:
-- **Player model extensions**: fatigue, discipline, confidence, ego, archetype, caps, milestones, chronic injuries, ceiling (hidden potential), form history, integration status
-- **Match engine types**: MatchStats (possession, territory, tackles, metres, phases, rucks), referee system, weather, substitution plan, TMO events, cards with sin-bin timing
-- **Staff types**: specialist coaching staff roles (scrum coach, kicking coach, defence coach, analyst, psychologist, nutritionist)
-- **Contract extensions**: agent system, French leverage for Irish players, cultural fit, integration period
+## Test Summary
+Played as Leinster Rugby (URC, reputation 90). Advanced from Week 1 to Week 5, explored Squad, Tactics, Training, Transfers, and Fixtures pages.
 
-## Phase 2: Set-Piece Engine
-- **Scrum**: Dynamic engagement with loosehead/tighthead battle. Pack weight + technique = dominance. Ref bias affects penalty tendency. Dominant scrum degrades opposition 9/10 ball quality
-- **Lineout**: Repertoire of calls (8-10). Opposition scouting over matches. Hooker throwing accuracy + jumper aerial ability. Lineout coach expands repertoire
-- **Maul**: Post-lineout catch→set→drive sequence. Pack weight + technique determines drive success. Defence can sack (risky) or hold. Training investment required
+---
 
-## Phase 3: Match Simulation Engine Rewrite
-Replace the current random-event loop with attribute-driven simulation:
-- **Phase-by-phase model**: Each possession is a sequence of phases with breakdown, ruck speed, and gainline outcomes
-- **Kicking game**: Box kicks, 50:22, contestable kicks, exit strategies — all tied to player kicking stats and aerial ability
-- **Breakdown**: Jackal threat, cleanout quality, ruck speed affecting ball quality
-- **Weather effects**: Wind on kicks, wet ball handling, heavy pitch fatigue curves
-- **Fatigue system**: Players tire over 80 mins with position-specific curves (props gas at 55-60 min). Fresh subs vs tired starters is a real advantage
+## Critical Bugs Found
 
-## Phase 4: Live Match Stats Dashboard
-- Real-time updating stats panel during simulation: possession %, territory %, tackle completion, metres gained, ruck speed, phase count, penalties conceded
-- Post-match detailed stats with comparison bars
-- Player ratings generated from match contributions
+### Bug 1: Matches are never simulated (BLOCKER)
+The `advanceWeek()` function in `GameContext.tsx` only increments `currentWeek` by 1. It does **not**:
+- Run the match simulator for the current week's fixture
+- Update fixture status from "scheduled" to "completed"
+- Record scores on the fixture
+- Update league standings
+- Apply fatigue, injuries, or form changes to players
 
-## Phase 5: Bench & Substitution System
-- Bench composition choice (6-2 vs 5-3 split)
-- Impact substitution rating per player
-- Pre-set auto-sub rules ("sub loosehead at 50 min")
-- Timing risk/reward mechanics
-- SA "bomb squad" style: fresh front row dominates tired opposition
+After 4 weeks advanced, Fixtures page shows "0 Completed" and all past fixtures remain "Scheduled" with no scores. This is the central gameplay loop and it's completely missing.
 
-## Phase 6: Discipline, Cards & TMO
-- Per-player discipline stat affecting penalty tendency
-- Team warning system → next infringement = yellow card
-- Yellow card with 10-min sin bin (plays with 14 men)
-- Red card for dangerous tackles tied to aggression stat
-- TMO reviews on try-scoring events (random chance to disallow/upgrade)
-- Penalty goal vs lineout attack decision-making
+### Bug 2: Standings page uses random data
+`src/pages/Standings.tsx` generates standings using `Math.random()` on every render (lines 21-44). It doesn't read from `league.standings` or fixture results at all. Every time you visit the page, different random data appears.
 
-## Phase 7: Player Psychology & Development
-- Confidence meter (rises with good performances, drops when dropped/errors)
-- Player archetypes per position (playmaker 10, running 10, carrying 8, linking 8, etc.)
-- Ego system: star players unhappy on bench, demand starts
-- Mentoring: pair veterans with youth for faster development
-- Player milestones: 50th/100th cap, scoring records
-- Personal chat system with player requests/concerns
+### Bug 3: Dashboard standings widget is static
+The dashboard shows "P: 0 | Pts: 0" because `league.standings` is initialized with zeros and never updated by match results.
 
-## Phase 8: Coaching Staff & Scouting
-- Specialist staff hiring: scrum coach, kicking coach, defence coach, analyst, psychologist, nutritionist
-- Each staff member provides measurable bonuses to relevant stats
-- Coaching philosophy system (Structured/Expansive/Pragmatic/Development)
-- Pre-match opposition scouting reports based on analyst quality
-- Hidden potential system for young players
+### Bug 4: Player stats never change
+After advancing weeks, Team Form (7.1/10), Injuries (0), and Squad Strength (75 avg) remain completely static. No fatigue, injury, or form processing occurs on week advance.
 
-## Phase 9: Squad Dynamics & Contracts
-- Player agent interference mid-season
-- Irish players using French clubs as leverage (country-specific negotiation)
-- Cultural fit & integration period for new signings (4-6 weeks reduced effectiveness)
-- Team chemistry from same country/province
-- Academy pipeline generating prospects based on investment
+### Bug 5: Transfer window timing not tied to week progression
+Transfer window shows "Closed — opens June 1" regardless of current week. There's no calendar/date mapping from game weeks to in-game months.
 
-## Phase 10: Season Narrative & Events
-- Dynamic season events (media pressure, board expectations)
-- Referee assignment with individual tendencies
-- Injury rehabilitation decisions (rush back vs conservative)
-- Form & momentum system (rolling 5-match rating)
-- Pre-match team talks, half-time adjustments, post-match
+---
 
-## Files to create/modify:
-- `src/types/matchEngine.ts` — New comprehensive match types
-- `src/types/staff.ts` — Coaching staff types
-- `src/types/playerExtended.ts` — Extended player attributes
-- `src/engine/matchSimulator.ts` — New match engine
-- `src/engine/setPieces.ts` — Scrum/lineout/maul mechanics
-- `src/engine/fatigue.ts` — Fatigue & substitution logic
-- `src/engine/discipline.ts` — Cards, TMO, penalties
-- `src/engine/matchStats.ts` — Live stats calculation
-- `src/components/match/MatchStatsPanel.tsx` — Live stats UI
-- `src/components/match/BenchManager.tsx` — Substitution UI
-- `src/components/match/MatchCommentary.tsx` — Event feed
-- `src/components/staff/StaffPanel.tsx` — Coaching staff management
-- `src/components/player/PlayerPsychology.tsx` — Psychology/ego UI
-- `src/pages/MatchSimulation.tsx` — Complete rewrite
-- `src/types/game.ts` — Extend Player, Team, Match interfaces
+## What Works Well
+- Team selection page — visually polished with reputation tiers
+- Squad roster with contract data, wages, positions
+- Tactics configuration (attack/defense style, scrum focus, lineout)
+- Training system with session creation, group targeting
+- Fixture generation (30 fixtures with home/away, weather, travel)
+- Season narrative events (academy graduate event fired at Week 3)
+- Match simulator exists as a standalone page (but disconnected from season)
+- Transfer market with 1749 players, filtering, shortlisting
+
+---
+
+## Proposed Fix Plan
+
+### 1. Wire match simulation into `advanceWeek` (Core fix)
+**Files**: `src/contexts/GameContext.tsx`, `src/pages/Dashboard.tsx`
+
+- When advancing a week, retrieve the current week's fixtures from the schedule
+- For the player's team match: either auto-simulate or prompt to play live
+- For all other league matches: auto-simulate with `simulateFullMatch`
+- Update fixture status to "completed" and record scores
+- Save updated schedule back to localStorage
+
+### 2. Update league standings from results
+**Files**: `src/contexts/GameContext.tsx` or new utility
+
+- After simulating all matches in a week, recalculate `league.standings` from completed fixtures
+- Update points (4 for win, 2 for draw, bonus points for 4+ tries or losing within 7)
+- Store in GameState so dashboard and standings page read real data
+
+### 3. Fix Standings page to use actual data
+**File**: `src/pages/Standings.tsx`
+
+- Replace `Math.random()` block with actual `league.standings` data from GameContext
+- Sort by total points, then points difference
+
+### 4. Apply player effects on week advance
+**Files**: `src/contexts/GameContext.tsx`
+
+- Process fatigue recovery/accumulation based on whether player played
+- Roll for injuries using the existing injury system
+- Update player form based on match performance ratings
+- Apply training effects from assigned sessions
+
+### 5. Connect transfer window to game calendar
+**File**: `src/pages/Transfers.tsx` or `GameContext`
+
+- Map game weeks to approximate months (e.g., Week 1 = September)
+- Open/close transfer window based on game week ranges
+
+### Technical approach
+- The `advanceWeek` function becomes the central game loop orchestrator
+- Move fixture schedule into GameContext (or pass it through) so it persists across page navigations
+- Create a `simulateWeek()` function that coordinates: match sim → standings update → player effects → narrative events → calendar advance
