@@ -8,6 +8,8 @@ import { simulateWeek, WeekSimResult } from '@/engine/gameLoop';
 
 interface GameContextType {
   gameState: GameState;
+  schedule: SeasonSchedule | null;
+  lastMatchResult: WeekSimResult['playerMatchResult'] | null;
   selectTeam: (teamId: string) => void;
   advanceWeek: () => void;
   updateTactics: (tactics: Team['tactics']) => void;
