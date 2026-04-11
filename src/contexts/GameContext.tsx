@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { GameState, Team, League, Match, Player, TeamKit, FacilityUpgradeRequest, TeamFacilities } from '@/types/game';
 import { StaffMember, CoachingPhilosophy } from '@/types/staff';
 import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
+import { SeasonSchedule } from '@/types/fixture';
+import { generateSeasonFixtures } from '@/utils/fixtureGenerator';
+import { simulateWeek, WeekSimResult } from '@/engine/gameLoop';
 
 interface GameContextType {
   gameState: GameState;
