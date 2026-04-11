@@ -49,9 +49,41 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return INITIAL_STATE;
   });
 
+  const [schedule, setSchedule] = useState<SeasonSchedule | null>(() => {
+    if (!gameState.selectedTeam) return null;
+    const league = getLeagueByTeamId(gameState.selectedTeam.id);
+    if (!league) return null;
+    const savedKey = `fixtures-${league.id}-${gameState.currentSeason}`;
+    const saved = localStorage.getItem(savedKey);
+    if (saved) {
+      try { return JSON.parse(saved); } catch { /* fall through */ }
+    }
+    return null;
+  });
+
+  const [lastMatchResult, setLastMatchResult] = useState<WeekSimResult['playerMatchResult'] | null>(null);
+
   useEffect(() => {
     localStorage.setItem('rugbyManagerState', JSON.stringify(gameState));
   }, [gameState]);
+
+  // Ensure schedule exists when a team is selected
+  useEffect(() => {
+    if (!gameState.selectedTeam || schedule) return;
+    const league = getLeagueByTeamId(gameState.selectedTeam.id);
+    if (!league) return;
+    const savedKey = `fixtures-${league.id}-${gameState.currentSeason}`;
+    const saved = localStorage.getItem(savedKey);
+    if (saved) {
+      try {
+        setSchedule(JSON.parse(saved));
+        return;
+      } catch { /* fall through */ }
+    }
+    const newSchedule = generateSeasonFixtures(league, gameState.currentSeason);
+    setSchedule(newSchedule);
+    localStorage.setItem(savedKey, JSON.stringify(newSchedule));
+  }, [gameState.selectedTeam, gameState.currentSeason, schedule]);
 
   const selectTeam = (teamId: string) => {
     const team = getTeamById(teamId);
@@ -60,13 +92,40 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ...prev,
         selectedTeam: team
       }));
+      setSchedule(null); // Reset schedule so it regenerates for the new team's league
     }
   };
 
   const advanceWeek = () => {
+    if (!schedule) {
+      // No schedule, just increment
+      setGameState(prev => ({ ...prev, currentWeek: prev.currentWeek + 1 }));
+      return;
+    }
+
+    const result = simulateWeek(
+      gameState.currentWeek,
+      schedule,
+      gameState.leagues,
+      gameState.selectedTeam,
+    );
+
+    // Save updated schedule
+    const league = gameState.selectedTeam ? getLeagueByTeamId(gameState.selectedTeam.id) : null;
+    if (league) {
+      localStorage.setItem(
+        `fixtures-${league.id}-${gameState.currentSeason}`,
+        JSON.stringify(result.updatedSchedule)
+      );
+    }
+    setSchedule(result.updatedSchedule);
+    setLastMatchResult(result.playerMatchResult || null);
+
     setGameState(prev => ({
       ...prev,
-      currentWeek: prev.currentWeek + 1
+      currentWeek: prev.currentWeek + 1,
+      leagues: result.updatedLeagues,
+      selectedTeam: result.updatedTeam,
     }));
   };
 
