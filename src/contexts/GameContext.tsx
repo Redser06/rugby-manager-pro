@@ -356,6 +356,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   return (
     <GameContext.Provider value={{
       gameState,
+      schedule,
+      lastMatchResult,
       selectTeam,
       advanceWeek,
       updateTactics,
