@@ -120,7 +120,18 @@ export default function Dashboard() {
               </Button>
             }
           />
-          <Button onClick={advanceWeek} size="lg">
+          <Button onClick={() => {
+            advanceWeek();
+            if (lastMatchResult) {
+              const { won, homeScore, awayScore, opponent, isHome } = lastMatchResult;
+              toast({
+                title: won ? '🏆 Victory!' : homeScore === awayScore ? '🤝 Draw' : '😞 Defeat',
+                description: `${isHome ? team?.shortName : opponent} ${homeScore} - ${awayScore} ${isHome ? opponent : team?.shortName}`,
+              });
+            } else {
+              toast({ title: `Week ${gameState.currentWeek + 1} Started`, description: 'Bye week — no fixture.' });
+            }
+          }} size="lg">
             <Calendar className="mr-2 h-5 w-5" />
             Advance Week
           </Button>
