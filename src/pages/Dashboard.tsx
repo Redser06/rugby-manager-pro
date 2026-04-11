@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useGame } from '@/contexts/GameContext';
 import { SeasonSchedule, Fixture } from '@/types/fixture';
-import { generateSeasonFixtures, getWeekFixtures, canTeamTrain } from '@/utils/fixtureGenerator';
+import { getWeekFixtures, canTeamTrain } from '@/utils/fixtureGenerator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ShareDialog } from '@/components/share/ShareDialog';
 import { SeasonEventsPanel } from '@/components/narrative/SeasonEventsPanel';
+import { useToast } from '@/hooks/use-toast';
 import {
   initSeasonNarrative, processWeeklyNarrative, assignReferee,
   SeasonNarrativeState, MatchReferee
@@ -30,37 +31,14 @@ import {
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { gameState, getMyTeam, getMyLeague, advanceWeek } = useGame();
+  const { gameState, schedule, lastMatchResult, getMyTeam, getMyLeague, advanceWeek } = useGame();
+  const { toast } = useToast();
   const team = getMyTeam();
   const league = getMyLeague();
   
   // Season narrative state
   const [narrativeState, setNarrativeState] = useState<SeasonNarrativeState | null>(null);
   const [upcomingRef, setUpcomingRef] = useState<MatchReferee | undefined>();
-  
-  // Load/generate fixtures schedule
-  const [schedule, setSchedule] = useState<SeasonSchedule | null>(null);
-  
-  useEffect(() => {
-    if (league && !schedule) {
-      const savedKey = `fixtures-${league.id}-${gameState.currentSeason}`;
-      const saved = localStorage.getItem(savedKey);
-      
-      if (saved) {
-        try {
-          setSchedule(JSON.parse(saved));
-        } catch {
-          const newSchedule = generateSeasonFixtures(league, gameState.currentSeason);
-          setSchedule(newSchedule);
-          localStorage.setItem(savedKey, JSON.stringify(newSchedule));
-        }
-      } else {
-        const newSchedule = generateSeasonFixtures(league, gameState.currentSeason);
-        setSchedule(newSchedule);
-        localStorage.setItem(savedKey, JSON.stringify(newSchedule));
-      }
-    }
-  }, [league, gameState.currentSeason, schedule]);
   
   // Get this week's fixture - useMemo before early return
   const thisWeekFixture = useMemo(() => {
@@ -142,7 +120,18 @@ export default function Dashboard() {
               </Button>
             }
           />
-          <Button onClick={advanceWeek} size="lg">
+          <Button onClick={() => {
+            advanceWeek();
+            if (lastMatchResult) {
+              const { won, homeScore, awayScore, opponent, isHome } = lastMatchResult;
+              toast({
+                title: won ? '🏆 Victory!' : homeScore === awayScore ? '🤝 Draw' : '😞 Defeat',
+                description: `${isHome ? team?.shortName : opponent} ${homeScore} - ${awayScore} ${isHome ? opponent : team?.shortName}`,
+              });
+            } else {
+              toast({ title: `Week ${gameState.currentWeek + 1} Started`, description: 'Bye week — no fixture.' });
+            }
+          }} size="lg">
             <Calendar className="mr-2 h-5 w-5" />
             Advance Week
           </Button>

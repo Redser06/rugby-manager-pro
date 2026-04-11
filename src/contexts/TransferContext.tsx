@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { weekToMonth, weekToMonthName, isTransferWindowOpenForWeek } from '@/engine/gameLoop';
 import { 
   TransferState, 
   ShortlistedPlayer, 
@@ -209,31 +210,18 @@ export function TransferProvider({ children }: { children: ReactNode }) {
   const isTransferWindowOpen = (): boolean => {
     const myTeam = getMyTeam();
     if (!myTeam) return false;
-    
-    // Determine hemisphere based on league
     const myLeague = getMyLeague();
     const isSouthern = myLeague?.name === 'Super Rugby';
-    
-    // Current month (simulated based on week)
-    const currentMonth = Math.floor((gameState.currentWeek - 1) / 4) + 1; // Rough approximation
-    
-    if (isSouthern) {
-      // Dec-Feb for Southern
-      return currentMonth === 12 || currentMonth <= 2;
-    } else {
-      // June-Aug for Northern
-      return currentMonth >= 6 && currentMonth <= 8;
-    }
+    return isTransferWindowOpenForWeek(gameState.currentWeek, !!isSouthern);
   };
   
   const getTransferWindowDates = () => {
     const myLeague = getMyLeague();
     const isSouthern = myLeague?.name === 'Super Rugby';
-    
     if (isSouthern) {
-      return { start: 'December 1', end: 'February 28' };
+      return { start: 'July 1', end: 'September 30' };
     }
-    return { start: 'June 1', end: 'August 31' };
+    return { start: 'June 1', end: 'August 31 (+ January window)' };
   };
   
   const addToShortlist = (playerId: string, teamId: string, notes: string = '') => {
