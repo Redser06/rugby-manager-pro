@@ -9,7 +9,14 @@
 import { Team, League, LeagueStanding, Player } from '@/types/game';
 import { SeasonSchedule, Fixture } from '@/types/fixture';
 import { simulateFullMatch, createDefaultSubPlan } from './matchSimulator';
-import { StaffBonuses, DEFAULT_STAFF_BONUSES } from '@/types/staff';
+import { StaffBonuses, calculateStaffBonuses } from '@/types/staff';
+
+const EMPTY_STAFF_BONUSES: StaffBonuses = {
+  scrumBonus: 0, lineoutBonus: 0, tackleBonus: 0, kickingBonus: 0,
+  attackBonus: 0, ruckSpeedBonus: 0, fatigueResistance: 0,
+  injuryRecoveryBonus: 0, confidenceRecoveryBonus: 0, scoutingQuality: 0,
+  lineoutRepertoire: 0,
+};
 
 // ========================
 // QUICK MATCH SIM (for AI teams)
@@ -82,19 +89,8 @@ export interface WeekSimResult {
 }
 
 function getStaffBonuses(team: Team): StaffBonuses {
-  if (!team.staff || team.staff.length === 0) return DEFAULT_STAFF_BONUSES;
-  
-  const bonuses: StaffBonuses = { ...DEFAULT_STAFF_BONUSES };
-  for (const s of team.staff) {
-    switch (s.role) {
-      case 'scrum_coach': bonuses.scrumBonus += s.rating * 0.05; break;
-      case 'defence_coach': bonuses.tackleBonus += s.rating * 0.05; break;
-      case 'attack_coach': bonuses.attackBonus += s.rating * 0.05; break;
-      case 'kicking_coach': bonuses.kickingBonus += s.rating * 0.05; break;
-      case 'lineout_coach': bonuses.lineoutBonus += s.rating * 0.05; break;
-    }
-  }
-  return bonuses;
+  if (!team.staff || team.staff.length === 0) return { ...EMPTY_STAFF_BONUSES };
+  return calculateStaffBonuses(team.staff);
 }
 
 export function simulateWeek(
