@@ -31,37 +31,14 @@ import {
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { gameState, getMyTeam, getMyLeague, advanceWeek } = useGame();
+  const { gameState, schedule, lastMatchResult, getMyTeam, getMyLeague, advanceWeek } = useGame();
+  const { toast } = useToast();
   const team = getMyTeam();
   const league = getMyLeague();
   
   // Season narrative state
   const [narrativeState, setNarrativeState] = useState<SeasonNarrativeState | null>(null);
   const [upcomingRef, setUpcomingRef] = useState<MatchReferee | undefined>();
-  
-  // Load/generate fixtures schedule
-  const [schedule, setSchedule] = useState<SeasonSchedule | null>(null);
-  
-  useEffect(() => {
-    if (league && !schedule) {
-      const savedKey = `fixtures-${league.id}-${gameState.currentSeason}`;
-      const saved = localStorage.getItem(savedKey);
-      
-      if (saved) {
-        try {
-          setSchedule(JSON.parse(saved));
-        } catch {
-          const newSchedule = generateSeasonFixtures(league, gameState.currentSeason);
-          setSchedule(newSchedule);
-          localStorage.setItem(savedKey, JSON.stringify(newSchedule));
-        }
-      } else {
-        const newSchedule = generateSeasonFixtures(league, gameState.currentSeason);
-        setSchedule(newSchedule);
-        localStorage.setItem(savedKey, JSON.stringify(newSchedule));
-      }
-    }
-  }, [league, gameState.currentSeason, schedule]);
   
   // Get this week's fixture - useMemo before early return
   const thisWeekFixture = useMemo(() => {
