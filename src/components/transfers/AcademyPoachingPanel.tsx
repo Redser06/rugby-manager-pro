@@ -48,7 +48,7 @@ export function AcademyPoachingPanel() {
   // Generate prospects if empty
   const handleGenerateIntake = () => {
     if (!myTeam) return;
-    const feeders = generateFeedersForTeam(myTeam.country, myTeam.facilities?.academy?.reputation || 50);
+    const feeders = generateFeedersForTeam(myTeam.country, myTeam.facilities?.academy?.reputation || 50, myTeam.name);
     const intake = generateAnnualIntake(myTeam.country, myTeam.facilities?.academy || {
       overallRating: 3 as const,
       scoutingNetwork: 3 as const,
