@@ -28,7 +28,7 @@ export default function Academy() {
 
   useEffect(() => {
     if (team) {
-      const generated = generateFeedersForTeam(team.country, team.facilities.academy.reputation);
+      const generated = generateFeedersForTeam(team.country, team.facilities.academy.reputation, team.name);
       setFeeders(generated);
       const intake = generateAnnualIntake(team.country, team.facilities.academy, generated);
       setProspects(intake);
