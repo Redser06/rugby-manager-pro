@@ -139,41 +139,560 @@ function pick<T>(arr: T[]): T {
 // FEEDER GENERATION
 // ========================
 
-const SCHOOL_NAMES: Record<string, string[]> = {
-  Ireland: ['Blackrock College', "St Michael's College", 'Clongowes Wood', 'Gonzaga College', 'Belvedere College', 'St Munchin\'s College', 'PBC Cork', 'Newbridge College', "St Andrew's College", 'CBC Monkstown', 'Campbell College', 'RBAI', 'Terenure College', 'Cistercian College'],
-  Wales: ['Ysgol Gyfun Gŵyr', 'Coleg Sir Gâr', 'Llandovery College', 'Christ College Brecon', 'Cardiff Met'],
-  England: ['Sedbergh School', 'Wellington College', 'Millfield School', 'Harrow School', 'Whitgift School', 'RGS High Wycombe', 'Hartpury College'],
-  France: ['Centre de Formation Toulouse', 'Pôle Espoirs Marcoussis', 'Centre de Formation La Rochelle', 'Racing Academy'],
-  'New Zealand': ['Christchurch BHS', 'Auckland Grammar', 'Hamilton BHS', 'Hastings BHS', 'Kelston BHS'],
-  'South Africa': ['Grey College', 'Paarl Gimnasium', 'Paul Roos Gymnasium', 'Affies', 'Selborne College'],
-  Australia: ['Nudgee College', 'St Joseph\'s Gregory Terrace', 'The King\'s School', 'Scots College'],
-  Scotland: ['Stewart\'s Melville College', 'George Watson\'s College', 'Dollar Academy', 'Merchiston Castle'],
-  Italy: ['Accademia FIR', 'Petrarca Padova Youth', 'Viadana Rugby Youth'],
+// Team-specific feeder schools/clubs aligned to provinces/regions
+// Each team gets a realistic mix of schools and clubs from their catchment area
+const TEAM_FEEDERS: Record<string, { name: string; type: 'school' | 'club' | 'regional' | 'university' }[]> = {
+  // === IRELAND — Schools system is strongest in Leinster ===
+  'Leinster Rugby': [
+    { name: 'Blackrock College', type: 'school' },
+    { name: "St Michael's College", type: 'school' },
+    { name: "St Mary's College", type: 'school' },
+    { name: 'Clongowes Wood College', type: 'school' },
+    { name: 'Belvedere College', type: 'school' },
+    { name: 'Terenure College', type: 'school' },
+    { name: 'Gonzaga College', type: 'school' },
+    { name: "St Andrew's College", type: 'school' },
+    { name: 'Newbridge College', type: 'school' },
+    { name: 'CBC Monkstown', type: 'school' },
+    { name: 'Cistercian College Roscrea', type: 'school' },
+    { name: 'King\'s Hospital', type: 'school' },
+    { name: 'Lansdowne FC', type: 'club' },
+    { name: 'Old Wesley', type: 'club' },
+    { name: 'UCD RFC', type: 'university' },
+    { name: 'Trinity College RFC', type: 'university' },
+    { name: 'Naas RFC', type: 'club' },
+    { name: 'Skerries RFC', type: 'club' },
+  ],
+  'Munster Rugby': [
+    { name: "St Munchin's College", type: 'school' },
+    { name: 'PBC Cork', type: 'school' },
+    { name: 'CBC Cork', type: 'school' },
+    { name: 'Crescent College', type: 'school' },
+    { name: 'Rockwell College', type: 'school' },
+    { name: 'Glenstal Abbey', type: 'school' },
+    { name: 'Ardscoil Rís', type: 'school' },
+    { name: 'Young Munster RFC', type: 'club' },
+    { name: 'Shannon RFC', type: 'club' },
+    { name: 'Garryowen FC', type: 'club' },
+    { name: 'Cork Constitution', type: 'club' },
+    { name: 'UL Bohemian RFC', type: 'club' },
+    { name: 'UCC RFC', type: 'university' },
+    { name: 'Cashel RFC', type: 'club' },
+    { name: 'Bruff RFC', type: 'club' },
+  ],
+  'Ulster Rugby': [
+    { name: 'Campbell College', type: 'school' },
+    { name: 'RBAI', type: 'school' },
+    { name: 'Methodist College', type: 'school' },
+    { name: 'Royal School Armagh', type: 'school' },
+    { name: 'Royal School Dungannon', type: 'school' },
+    { name: 'Sullivan Upper', type: 'school' },
+    { name: 'Wallace High School', type: 'school' },
+    { name: 'Ballymena RFC', type: 'club' },
+    { name: 'Ballynahinch RFC', type: 'club' },
+    { name: 'Banbridge RFC', type: 'club' },
+    { name: 'Malone RFC', type: 'club' },
+    { name: 'Queen\'s University RFC', type: 'university' },
+    { name: 'Dungannon RFC', type: 'club' },
+    { name: 'City of Armagh RFC', type: 'club' },
+  ],
+  'Connacht Rugby': [
+    { name: 'Garbally College', type: 'school' },
+    { name: 'Coláiste Iognáid', type: 'school' },
+    { name: 'Sligo Grammar', type: 'school' },
+    { name: 'Galwegians RFC', type: 'club' },
+    { name: 'Corinthians RFC', type: 'club' },
+    { name: 'Buccaneers RFC', type: 'club' },
+    { name: 'Ballina RFC', type: 'club' },
+    { name: 'Westport RFC', type: 'club' },
+    { name: 'NUI Galway RFC', type: 'university' },
+    { name: 'Sligo RFC', type: 'club' },
+    { name: 'Creggs RFC', type: 'club' },
+  ],
+
+  // === WALES — Mix of schools and clubs, less schools-dominated than Leinster ===
+  'Scarlets': [
+    { name: 'Coleg Sir Gâr', type: 'school' },
+    { name: 'Ysgol Gyfun Gŵyr', type: 'school' },
+    { name: 'Llandovery College', type: 'school' },
+    { name: 'Llanelli RFC', type: 'club' },
+    { name: 'Carmarthen Quins', type: 'club' },
+    { name: 'Llandovery RFC', type: 'club' },
+    { name: 'Amman United', type: 'club' },
+    { name: 'Tumble RFC', type: 'club' },
+  ],
+  'Ospreys': [
+    { name: 'Ysgol Gyfun Ystalyfera', type: 'school' },
+    { name: 'Bishopston Comprehensive', type: 'school' },
+    { name: 'Neath RFC', type: 'club' },
+    { name: 'Swansea RFC', type: 'club' },
+    { name: 'Aberavon RFC', type: 'club' },
+    { name: 'Bridgend Ravens', type: 'club' },
+    { name: 'Tonmawr RFC', type: 'club' },
+    { name: 'Swansea University RFC', type: 'university' },
+  ],
+  'Cardiff Rugby': [
+    { name: 'Cardiff High School', type: 'school' },
+    { name: 'Whitchurch High School', type: 'school' },
+    { name: 'Cardiff Met RFC', type: 'university' },
+    { name: 'Pontypridd RFC', type: 'club' },
+    { name: 'Cardiff RFC', type: 'club' },
+    { name: 'Glamorgan Wanderers', type: 'club' },
+    { name: 'Rumney RFC', type: 'club' },
+    { name: 'Llandaff RFC', type: 'club' },
+  ],
+  'Dragons RFC': [
+    { name: 'West Monmouth School', type: 'school' },
+    { name: 'Rougemont School', type: 'school' },
+    { name: 'Newport RFC', type: 'club' },
+    { name: 'Cross Keys RFC', type: 'club' },
+    { name: 'Ebbw Vale RFC', type: 'club' },
+    { name: 'Pontypool RFC', type: 'club' },
+    { name: 'Newbridge RFC', type: 'club' },
+    { name: 'Bedwas RFC', type: 'club' },
+  ],
+
+  // === SCOTLAND — Mix of private schools and clubs ===
+  'Edinburgh Rugby': [
+    { name: "Stewart's Melville College", type: 'school' },
+    { name: "George Watson's College", type: 'school' },
+    { name: 'Merchiston Castle School', type: 'school' },
+    { name: 'Edinburgh Academicals', type: 'club' },
+    { name: 'Heriot\'s RFC', type: 'club' },
+    { name: 'Boroughmuir Bears', type: 'club' },
+    { name: 'Watsonians RFC', type: 'club' },
+    { name: 'Currie RFC', type: 'club' },
+    { name: 'Edinburgh University RFC', type: 'university' },
+  ],
+  'Glasgow Warriors': [
+    { name: 'Glasgow Academy', type: 'school' },
+    { name: 'Hutchesons\' Grammar', type: 'school' },
+    { name: 'Glasgow Hawks', type: 'club' },
+    { name: 'Ayr RFC', type: 'club' },
+    { name: 'GHK RFC', type: 'club' },
+    { name: 'Stirling County', type: 'club' },
+    { name: 'West of Scotland FC', type: 'club' },
+    { name: 'Strathclyde University RFC', type: 'university' },
+  ],
+  'Caledonia Reds': [
+    { name: 'Robert Gordon\'s College', type: 'school' },
+    { name: 'Dollar Academy', type: 'school' },
+    { name: 'Aberdeen Grammar RFC', type: 'club' },
+    { name: 'Dundee HSFP', type: 'club' },
+    { name: 'Highland RFC', type: 'club' },
+    { name: 'Gordonians RFC', type: 'club' },
+  ],
+  'Border Reivers': [
+    { name: 'Hawick High School', type: 'school' },
+    { name: 'Hawick RFC', type: 'club' },
+    { name: 'Melrose RFC', type: 'club' },
+    { name: 'Gala RFC', type: 'club' },
+    { name: 'Kelso RFC', type: 'club' },
+    { name: 'Jed-Forest RFC', type: 'club' },
+    { name: 'Selkirk RFC', type: 'club' },
+  ],
+
+  // === ITALY — Club-based system ===
+  'Benetton Rugby': [
+    { name: 'Petrarca Padova Youth', type: 'club' },
+    { name: 'Rugby Paese', type: 'club' },
+    { name: 'Mogliano Rugby', type: 'club' },
+    { name: 'Valsugana Rugby', type: 'club' },
+    { name: 'Accademia FIR Treviso', type: 'regional' },
+    { name: 'Rugby Villorba', type: 'club' },
+  ],
+  'Zebre Parma': [
+    { name: 'Rugby Reggio', type: 'club' },
+    { name: 'Modena Rugby', type: 'club' },
+    { name: 'Noceto Rugby', type: 'club' },
+    { name: 'Colorno Rugby', type: 'club' },
+    { name: 'Accademia FIR Parma', type: 'regional' },
+  ],
+  'Roma Leoni': [
+    { name: 'Rugby Roma Olimpic', type: 'club' },
+    { name: 'Lazio Rugby', type: 'club' },
+    { name: 'Unione Rugby Capitolina', type: 'club' },
+    { name: 'Fiamme Oro Rugby', type: 'club' },
+    { name: 'Accademia FIR Roma', type: 'regional' },
+  ],
+  'Milano Rugby': [
+    { name: 'Rugby Milano', type: 'club' },
+    { name: 'ASR Milano', type: 'club' },
+    { name: 'Amatori & Union Milano', type: 'club' },
+    { name: 'CUS Milano', type: 'university' },
+    { name: 'Accademia FIR Nord', type: 'regional' },
+  ],
+
+  // === ENGLAND — Strong school and club system ===
+  'Saracens': [
+    { name: 'Harrow School', type: 'school' },
+    { name: 'Mill Hill School', type: 'school' },
+    { name: 'Haileybury College', type: 'school' },
+    { name: 'Saracens Amateurs', type: 'club' },
+    { name: 'Hertford RFC', type: 'club' },
+    { name: 'Old Albanians', type: 'club' },
+    { name: 'Bishop\'s Stortford RFC', type: 'club' },
+  ],
+  'Leicester Tigers': [
+    { name: 'Oakham School', type: 'school' },
+    { name: 'Uppingham School', type: 'school' },
+    { name: 'Loughborough Grammar', type: 'school' },
+    { name: 'Hinckley RFC', type: 'club' },
+    { name: 'Loughborough University RFC', type: 'university' },
+    { name: 'Syston RFC', type: 'club' },
+    { name: 'Market Harborough RFC', type: 'club' },
+  ],
+  'Sale Sharks': [
+    { name: 'Stockport Grammar', type: 'school' },
+    { name: 'Wilmslow RFC', type: 'club' },
+    { name: 'Sale FC', type: 'club' },
+    { name: 'Sedgley Park RFC', type: 'club' },
+    { name: 'Manchester RFC', type: 'club' },
+    { name: 'Macclesfield RFC', type: 'club' },
+  ],
+  'Northampton Saints': [
+    { name: 'Stowe School', type: 'school' },
+    { name: 'RGS High Wycombe', type: 'school' },
+    { name: 'Northampton Old Scouts', type: 'club' },
+    { name: 'Towcestrians RFC', type: 'club' },
+    { name: 'Bedford Blues', type: 'club' },
+    { name: 'Buckingham RFC', type: 'club' },
+  ],
+  'Bath Rugby': [
+    { name: 'Millfield School', type: 'school' },
+    { name: 'King Edward\'s Bath', type: 'school' },
+    { name: 'Beechen Cliff School', type: 'school' },
+    { name: 'Bath University RFC', type: 'university' },
+    { name: 'Walcot RFC', type: 'club' },
+    { name: 'Trowbridge RFC', type: 'club' },
+  ],
+  'Harlequins': [
+    { name: 'Whitgift School', type: 'school' },
+    { name: 'Trinity School Croydon', type: 'school' },
+    { name: 'John Fisher School', type: 'school' },
+    { name: 'Esher RFC', type: 'club' },
+    { name: 'Twickenham RFC', type: 'club' },
+    { name: 'Richmond FC', type: 'club' },
+    { name: 'Brunel University RFC', type: 'university' },
+  ],
+  'Bristol Bears': [
+    { name: 'Clifton College', type: 'school' },
+    { name: 'QEH Bristol', type: 'school' },
+    { name: 'Filton College', type: 'school' },
+    { name: 'Clifton RFC', type: 'club' },
+    { name: 'Dings Crusaders', type: 'club' },
+    { name: 'Old Bristolians', type: 'club' },
+    { name: 'UWE RFC', type: 'university' },
+  ],
+  'Exeter Chiefs': [
+    { name: 'Blundell\'s School', type: 'school' },
+    { name: 'Exeter School', type: 'school' },
+    { name: 'Ivybridge Community College', type: 'school' },
+    { name: 'Exeter University RFC', type: 'university' },
+    { name: 'Tiverton RFC', type: 'club' },
+    { name: 'Crediton RFC', type: 'club' },
+    { name: 'Barnstaple RFC', type: 'club' },
+  ],
+  'Gloucester Rugby': [
+    { name: 'Hartpury College', type: 'school' },
+    { name: 'Dean Close School', type: 'school' },
+    { name: 'Cheltenham College', type: 'school' },
+    { name: 'Cinderford RFC', type: 'club' },
+    { name: 'Lydney RFC', type: 'club' },
+    { name: 'Cheltenham RFC', type: 'club' },
+  ],
+  'London Irish': [
+    { name: 'Wellington College', type: 'school' },
+    { name: 'Reading Blue Coat', type: 'school' },
+    { name: 'Henley Hawks', type: 'club' },
+    { name: 'Reading RFC', type: 'club' },
+    { name: 'Bracknell RFC', type: 'club' },
+    { name: 'Maidenhead RFC', type: 'club' },
+  ],
+  'Newcastle Falcons': [
+    { name: 'RGS Newcastle', type: 'school' },
+    { name: 'Sedbergh School', type: 'school' },
+    { name: 'Gosforth RFC', type: 'club' },
+    { name: 'Northern FC', type: 'club' },
+    { name: 'Percy Park RFC', type: 'club' },
+    { name: 'Durham University RFC', type: 'university' },
+  ],
+  'Worcester Warriors': [
+    { name: 'RGS Worcester', type: 'school' },
+    { name: 'Bromsgrove School', type: 'school' },
+    { name: 'Malvern College', type: 'school' },
+    { name: 'Worcester RFC', type: 'club' },
+    { name: 'Bromsgrove RFC', type: 'club' },
+    { name: 'Droitwich RFC', type: 'club' },
+  ],
+  'Wasps': [
+    { name: 'Warwick School', type: 'school' },
+    { name: 'Rugby School', type: 'school' },
+    { name: 'Kenilworth RFC', type: 'club' },
+    { name: 'Leamington RFC', type: 'club' },
+    { name: 'Old Leamingtonians', type: 'club' },
+    { name: 'Warwick University RFC', type: 'university' },
+  ],
+  'Richmond FC': [
+    { name: 'Hampton School', type: 'school' },
+    { name: 'Kingston Grammar', type: 'school' },
+    { name: 'Rosslyn Park FC', type: 'club' },
+    { name: 'Old Deer Park', type: 'club' },
+    { name: 'Teddington RFC', type: 'club' },
+  ],
+  'Coventry Rugby': [
+    { name: 'Bablake School', type: 'school' },
+    { name: 'King Henry VIII School', type: 'school' },
+    { name: 'Barkers Butts RFC', type: 'club' },
+    { name: 'Nuneaton RFC', type: 'club' },
+    { name: 'Broadstreet RFC', type: 'club' },
+  ],
+  'Ealing Trailfinders': [
+    { name: 'St Benedict\'s School', type: 'school' },
+    { name: 'Latymer Upper School', type: 'school' },
+    { name: 'Ealing RFC', type: 'club' },
+    { name: 'Acton RFC', type: 'club' },
+    { name: 'West London RFC', type: 'club' },
+  ],
+
+  // === FRANCE — Espoirs/Centre de Formation system, NOT schools ===
+  'Toulouse': [
+    { name: 'Centre de Formation Toulouse', type: 'club' },
+    { name: 'Espoirs Stade Toulousain', type: 'club' },
+    { name: 'Colomiers Rugby', type: 'club' },
+    { name: 'US Montauban', type: 'club' },
+    { name: 'Blagnac SCR', type: 'club' },
+    { name: 'Albi RL', type: 'club' },
+  ],
+  'La Rochelle': [
+    { name: 'Centre de Formation La Rochelle', type: 'club' },
+    { name: 'Espoirs Stade Rochelais', type: 'club' },
+    { name: 'Rochefort RFC', type: 'club' },
+    { name: 'Niort RC', type: 'club' },
+    { name: 'Saintes RC', type: 'club' },
+  ],
+  'Racing 92': [
+    { name: 'Racing Academy', type: 'club' },
+    { name: 'Espoirs Racing 92', type: 'club' },
+    { name: 'PUC Paris', type: 'university' },
+    { name: 'Massy RC', type: 'club' },
+    { name: 'Suresnes RC', type: 'club' },
+  ],
+  'Stade Français Paris': [
+    { name: 'Centre de Formation Stade Français', type: 'club' },
+    { name: 'Espoirs Stade Français', type: 'club' },
+    { name: 'SCUF Paris', type: 'club' },
+    { name: 'Bobigny AC', type: 'club' },
+  ],
+  'RC Toulon': [
+    { name: 'Centre de Formation Toulon', type: 'club' },
+    { name: 'Espoirs RC Toulon', type: 'club' },
+    { name: 'US Seynoise', type: 'club' },
+    { name: 'Hyères RC', type: 'club' },
+  ],
+  'ASM Clermont': [
+    { name: 'Centre de Formation Clermont', type: 'club' },
+    { name: 'Espoirs ASM', type: 'club' },
+    { name: 'Issoire RC', type: 'club' },
+    { name: 'Riom RC', type: 'club' },
+    { name: 'Aurillac RC', type: 'club' },
+  ],
+  'Montpellier': [
+    { name: 'Centre de Formation Montpellier', type: 'club' },
+    { name: 'Espoirs MHR', type: 'club' },
+    { name: 'RC Narbonne', type: 'club' },
+    { name: 'Béziers ASBH', type: 'club' },
+  ],
+  'Lyon OU': [
+    { name: 'Centre de Formation Lyon', type: 'club' },
+    { name: 'Espoirs LOU', type: 'club' },
+    { name: 'CS Vienne', type: 'club' },
+    { name: 'FC Grenoble', type: 'club' },
+  ],
+  'Castres Olympique': [
+    { name: 'Centre de Formation Castres', type: 'club' },
+    { name: 'Espoirs CO', type: 'club' },
+    { name: 'Mazamet RC', type: 'club' },
+    { name: 'Graulhet RC', type: 'club' },
+  ],
+  'Bordeaux-Bègles': [
+    { name: 'Centre de Formation UBB', type: 'club' },
+    { name: 'Espoirs UBB', type: 'club' },
+    { name: 'Libourne RC', type: 'club' },
+    { name: 'Mérignac RC', type: 'club' },
+  ],
+  'Stade Rochelais': [
+    { name: 'Centre de Formation Stade Rochelais', type: 'club' },
+    { name: 'Angoulême RC', type: 'club' },
+    { name: 'Cognac RC', type: 'club' },
+  ],
+  'Section Paloise': [
+    { name: 'Centre de Formation Pau', type: 'club' },
+    { name: 'Espoirs Section Paloise', type: 'club' },
+    { name: 'Oloron RC', type: 'club' },
+    { name: 'Tarbes PRC', type: 'club' },
+  ],
+  'USA Perpignan': [
+    { name: 'Centre de Formation Perpignan', type: 'club' },
+    { name: 'Espoirs USAP', type: 'club' },
+    { name: 'Narbonne RC', type: 'club' },
+    { name: 'Thuir RC', type: 'club' },
+  ],
+  'Aviron Bayonnais': [
+    { name: 'Centre de Formation Bayonne', type: 'club' },
+    { name: 'Espoirs Aviron', type: 'club' },
+    { name: 'Biarritz Olympique', type: 'club' },
+    { name: 'Saint-Jean-de-Luz RC', type: 'club' },
+  ],
+  'Brive': [
+    { name: 'Centre de Formation Brive', type: 'club' },
+    { name: 'Espoirs Brive', type: 'club' },
+    { name: 'Tulle RC', type: 'club' },
+    { name: 'Objat RC', type: 'club' },
+  ],
+  'Oyonnax Rugby': [
+    { name: 'Centre de Formation Oyonnax', type: 'club' },
+    { name: 'Espoirs Oyonnax', type: 'club' },
+    { name: 'Bourg-en-Bresse RC', type: 'club' },
+    { name: 'Ambérieu RC', type: 'club' },
+  ],
+
+  // === NEW ZEALAND — School system ===
+  'Crusaders': [
+    { name: 'Christchurch BHS', type: 'school' },
+    { name: 'Nelson College', type: 'school' },
+    { name: 'Timaru BHS', type: 'school' },
+    { name: 'St Bede\'s College', type: 'school' },
+    { name: 'Lincoln University RFC', type: 'university' },
+    { name: 'Canterbury University RFC', type: 'university' },
+    { name: 'Burnside RFC', type: 'club' },
+    { name: 'Christchurch FC', type: 'club' },
+  ],
+  'Blues': [
+    { name: 'Auckland Grammar', type: 'school' },
+    { name: 'Kelston BHS', type: 'school' },
+    { name: 'De La Salle College', type: 'school' },
+    { name: 'Sacred Heart College', type: 'school' },
+    { name: 'Mt Albert Grammar', type: 'school' },
+    { name: 'Ponsonby RFC', type: 'club' },
+    { name: 'Grammar TEC', type: 'club' },
+    { name: 'Marist RFC', type: 'club' },
+  ],
+
+  // === SOUTH AFRICA — School system is massive ===
+  'Stormers': [
+    { name: 'Paarl Gimnasium', type: 'school' },
+    { name: 'Paul Roos Gymnasium', type: 'school' },
+    { name: 'Bishops', type: 'school' },
+    { name: 'Rondebosch BHS', type: 'school' },
+    { name: 'SACS', type: 'school' },
+    { name: 'Stellenbosch University RFC', type: 'university' },
+    { name: 'UCT RFC', type: 'university' },
+    { name: 'False Bay RFC', type: 'club' },
+  ],
+  'Bulls': [
+    { name: 'Affies', type: 'school' },
+    { name: 'Grey College', type: 'school' },
+    { name: 'Waterkloof HS', type: 'school' },
+    { name: 'Garsfontein HS', type: 'school' },
+    { name: 'Menlo Park HS', type: 'school' },
+    { name: 'UP Tuks RFC', type: 'university' },
+    { name: 'Blue Bulls U21', type: 'regional' },
+    { name: 'Centurion RFC', type: 'club' },
+  ],
+
+  // === AUSTRALIA — GPS school system + clubs ===
+  'Queensland Reds': [
+    { name: 'Nudgee College', type: 'school' },
+    { name: "St Joseph's Gregory Terrace", type: 'school' },
+    { name: 'Brisbane Grammar', type: 'school' },
+    { name: 'Brisbane Boys College', type: 'school' },
+    { name: 'GPS RFC', type: 'club' },
+    { name: 'University of Queensland RFC', type: 'university' },
+    { name: 'Brothers Old Boys', type: 'club' },
+    { name: 'Souths RFC Brisbane', type: 'club' },
+  ],
+  'NSW Waratahs': [
+    { name: "The King's School", type: 'school' },
+    { name: 'Scots College', type: 'school' },
+    { name: 'Newington College', type: 'school' },
+    { name: 'Shore School', type: 'school' },
+    { name: 'Sydney University RFC', type: 'university' },
+    { name: 'Eastwood RFC', type: 'club' },
+    { name: 'Randwick RFC', type: 'club' },
+    { name: 'Manly RFC', type: 'club' },
+  ],
 };
 
-export function generateFeedersForTeam(country: string, academyRep: number): FeederClub[] {
+// Country-level fallback feeders for teams not explicitly mapped
+const COUNTRY_FALLBACK_FEEDERS: Record<string, { name: string; type: 'school' | 'club' | 'regional' | 'university' }[]> = {
+  Ireland: [
+    { name: 'Local GAA/Rugby Club', type: 'club' },
+    { name: 'Community Rugby Programme', type: 'regional' },
+    { name: 'Provincial Development Squad', type: 'regional' },
+  ],
+  Wales: [
+    { name: 'Local RFC', type: 'club' },
+    { name: 'Regional Development', type: 'regional' },
+  ],
+  England: [
+    { name: 'Local Grammar School', type: 'school' },
+    { name: 'County RFC', type: 'club' },
+    { name: 'RFU Academy', type: 'regional' },
+  ],
+  France: [
+    { name: 'Centre de Formation Local', type: 'club' },
+    { name: 'Espoirs Régional', type: 'club' },
+    { name: 'Club Local', type: 'club' },
+  ],
+  'New Zealand': [
+    { name: 'Local BHS', type: 'school' },
+    { name: 'Provincial Union', type: 'regional' },
+    { name: 'Club RFC', type: 'club' },
+  ],
+  'South Africa': [
+    { name: 'Local Hoërskool', type: 'school' },
+    { name: 'Provincial Academy', type: 'regional' },
+    { name: 'Club RFC', type: 'club' },
+  ],
+  Australia: [
+    { name: 'GPS School', type: 'school' },
+    { name: 'Local Club RFC', type: 'club' },
+    { name: 'State Academy', type: 'regional' },
+  ],
+  Scotland: [
+    { name: 'Local Academy', type: 'school' },
+    { name: 'District RFC', type: 'club' },
+  ],
+  Italy: [
+    { name: 'Club Giovanile', type: 'club' },
+    { name: 'Accademia FIR', type: 'regional' },
+  ],
+};
+
+export function generateFeedersForTeam(country: string, academyRep: number, teamName?: string): FeederClub[] {
   const feeders: FeederClub[] = [];
-  const schoolNames = SCHOOL_NAMES[country] || SCHOOL_NAMES['England'];
   const demographics = REGIONAL_DEMOGRAPHICS.filter(d => d.country === country);
   
-  // Number of feeders based on academy reputation
-  const count = Math.max(2, Math.min(8, Math.floor(academyRep / 15)));
+  // Get team-specific feeders, or fall back to country defaults
+  const teamSpecificFeeders = teamName ? TEAM_FEEDERS[teamName] : null;
+  const fallbackFeeders = COUNTRY_FALLBACK_FEEDERS[country] || COUNTRY_FALLBACK_FEEDERS['England'];
+  const availableFeeders = teamSpecificFeeders || fallbackFeeders;
   
-  const usedNames = new Set<string>();
-  for (let i = 0; i < count; i++) {
-    let name: string;
-    do {
-      name = pick(schoolNames);
-    } while (usedNames.has(name) && usedNames.size < schoolNames.length);
-    usedNames.add(name);
-    
+  // Number of feeders based on academy reputation
+  const count = Math.max(3, Math.min(availableFeeders.length, Math.floor(academyRep / 12)));
+  
+  // Shuffle to avoid always picking the same ones
+  const shuffled = [...availableFeeders].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, count);
+  
+  for (const feederData of selected) {
     const region = demographics.length > 0 ? pick(demographics) : { region: country, rugbyPopulation: 50 };
-    const type: FeederClub['type'] = Math.random() > 0.6 ? 'school' : Math.random() > 0.5 ? 'club' : 'regional';
     
     feeders.push({
       id: Math.random().toString(36).substring(2, 7),
-      name,
-      type,
+      name: feederData.name,
+      type: feederData.type,
       region: region.region,
       quality: Math.max(20, Math.min(95, academyRep + Math.floor(Math.random() * 20 - 10))),
       relationship: 30 + Math.floor(Math.random() * 60),
