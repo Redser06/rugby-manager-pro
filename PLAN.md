@@ -18,7 +18,7 @@ A provincial-and-national **rugby union management sim** for the hardcore "Footb
 3. **Transfer realism = light abstraction.** Mostly contract-expiry free moves + occasional early release. Drop release-fee/buyout/selling-club-consent complexity. Still must implement functional offers (AI accept/reject of the player's incoming club offers; player actually joins the squad — today the loop is a dead end and no signing can occur).
 4. **Loans & dual-registration required.** The primary real-world squad-building mechanism — non-negotiable for authenticity.
 5. **National-team mode = launch scope.** Distinct setup flow, Test-window calendar, nation squad drawn from eligible players across all clubs, no weekly domestic sim.
-6. **Monetization = freemium trial → one-time paid download (IAP unlock).** Trial threshold TBD (owner floated "2 matches"; see §6 recommendation).
+6. **Monetization = freemium trial → one-time paid download (IAP unlock).** Trial = first half of season 1 (mid-season gate); see §6.
 7. **No women's rugby** (perceived no gamer market). Out of scope.
 
 ---
@@ -147,18 +147,14 @@ Do these in order — each unblocks the next:
 
 ---
 
-## 6. Open decision: trial threshold
+## 6. Trial threshold (decided)
 
-Owner floated **"2 matches."** **Recommendation: free trial = a full first season (or first ~8 match weeks); paywall = continuing into season 2+.**
+**Free trial = first half of season 1 (mid-season gate).** Play through to the season's midpoint, then the paywall blocks further week advancement until the one-time unlock is purchased. Long enough to demonstrate the career loop (tactics to fixtures to standings to development, with the set-piece engine and a title race taking shape) while gating the retention-driving second half and continuity into future seasons.
 
-Why: a management game sells on the *career loop*, not a single fixture. Two matches demo set pieces and a sin-bin but not aging, development, academy intake, tactics compounding, or a title race — the things that retain. A full first season free lets the player fall in love with the whole loop *and* gates the exact thing that retains them (continuity into year 2+). It converts better than 2 matches and costs nothing.
+**Implementation note (P1.11):** gate fires when `currentWeek` exceeds `totalWeeks / 2` for `currentSeason === 1`. The gate must allow in-trial state to be *viewed* (squad, tactics, standings) but block `advanceWeek` + new saves; offer the IAP unlock from the paywall surface. Trial progress persists locally and per-account so a re-install or device-clear doesn't reset it silently.
 
-→ **Pending owner confirm:** stick with ~2 matches, or adopt the full-first-season gate.
-
----
 
 ## 7. Open questions for the owner (final small set)
-- **Q-Trial:** 2-match gate vs. full-first-season gate? (§6)
 - **Team counts:** drop fictional/relegated filler clubs and model real 2025-26 rosters (Top 14=14, Prem=10-12)? (affects P2.5 realism)
 - **National mode depth at launch:** full World Cup cycle + qualifying, or launch with the core annual Test calendar (6N + autumn + summer) and add the World Cup cycle shortly after?
 - **Real-data import:** ship a default fictional roster set that's internally consistent across all launch competitions, or lean entirely on user-imported rosters from day one?
