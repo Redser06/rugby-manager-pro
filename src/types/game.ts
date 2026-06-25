@@ -383,4 +383,8 @@ export interface GameState {
   selectedTeam: Team | null;
   leagues: League[];
   upcomingMatches: Match[];
+  // Season-end summary for the most recently completed season. Produced by
+  // src/engine/seasonRollover.ts (P0.1); rendered by src/pages/SeasonSummary.tsx.
+  // type-only import avoids a runtime cycle (seasonResult.ts imports from here).
+  lastSeasonResult?: import('./seasonResult').SeasonResult | null;
 }

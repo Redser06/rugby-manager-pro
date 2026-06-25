@@ -5,11 +5,13 @@ import { LEAGUES, getTeamById, getLeagueByTeamId } from '@/data/leagues';
 import { SeasonSchedule } from '@/types/fixture';
 import { generateSeasonFixtures } from '@/utils/fixtureGenerator';
 import { simulateWeek, WeekSimResult } from '@/engine/gameLoop';
+import { rollOverSeason, isSeasonComplete, SeasonResult } from '@/engine/seasonRollover';
 
 interface GameContextType {
   gameState: GameState;
   schedule: SeasonSchedule | null;
   lastMatchResult: WeekSimResult['playerMatchResult'] | null;
+  lastSeasonResult: SeasonResult | null;
   selectTeam: (teamId: string) => void;
   advanceWeek: () => void;
   updateTactics: (tactics: Team['tactics']) => void;
@@ -62,6 +64,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
   });
 
   const [lastMatchResult, setLastMatchResult] = useState<WeekSimResult['playerMatchResult'] | null>(null);
+
+  // Season-end summary lives on gameState.lastSeasonResult (rendered by
+  // SeasonSummary.tsx) so it persists with the main save and survives reload.
+  // Exposed on the context too for convenience.
+  const lastSeasonResult: SeasonResult | null = gameState.lastSeasonResult ?? null;
 
   useEffect(() => {
     localStorage.setItem('rugbyManagerState', JSON.stringify(gameState));
@@ -121,9 +128,44 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSchedule(result.updatedSchedule);
     setLastMatchResult(result.playerMatchResult || null);
 
+    const nextWeek = gameState.currentWeek + 1;
+
+    // --- Season rollover (P0.1) ---
+    // If simulating this week finishes the season, roll straight into the next
+    // one: reset standings, regen fixtures, age every player, surface the
+    // season-end summary. The just-finished season's final standings live in
+    // result.updatedLeagues, so pass them as the "previous" state.
+    if (isSeasonComplete(nextWeek, result.updatedSchedule)) {
+      const finishedState: GameState = {
+        ...gameState,
+        currentWeek: nextWeek,
+        leagues: result.updatedLeagues,
+        selectedTeam: result.updatedTeam ?? gameState.selectedTeam,
+      };
+      const rollover = rollOverSeason(finishedState, result.updatedSchedule);
+
+      // Persist the new season's schedule
+      const newLeague = rollover.newGameState.selectedTeam
+        ? getLeagueByTeamId(rollover.newGameState.selectedTeam.id)
+        : null;
+      if (newLeague && rollover.newSchedule) {
+        localStorage.setItem(
+          `fixtures-${newLeague.id}-${rollover.newGameState.currentSeason}`,
+          JSON.stringify(rollover.newSchedule)
+        );
+      }
+
+      setSchedule(rollover.newSchedule);
+      setLastMatchResult(null);
+      // Carry the just-finished season's summary into the new season's state
+      // (SeasonSummary.tsx reads gameState.lastSeasonResult).
+      setGameState({ ...rollover.newGameState, lastSeasonResult: rollover.seasonResult });
+      return;
+    }
+
     setGameState(prev => ({
       ...prev,
-      currentWeek: prev.currentWeek + 1,
+      currentWeek: nextWeek,
       leagues: result.updatedLeagues,
       selectedTeam: result.updatedTeam,
     }));
@@ -358,6 +400,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       gameState,
       schedule,
       lastMatchResult,
+      lastSeasonResult,
       selectTeam,
       advanceWeek,
       updateTactics,
