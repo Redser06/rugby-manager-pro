@@ -304,6 +304,24 @@ export default function TeamSelection() {
 
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-10">
+        {/* Continue-career banner */}
+        {hasExistingCareer && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Career in progress</p>
+              <p className="text-sm sm:text-base font-semibold text-foreground">
+                {existingTeamName} · Season {gameState.currentSeason}, Week {gameState.currentWeek}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick a new team below to start over (we'll confirm before overwriting).
+              </p>
+            </div>
+            <Button onClick={() => navigate('/dashboard')} className="sm:ml-4">
+              Continue {existingShort}
+            </Button>
+          </div>
+        )}
+
         {/* Loading overlay */}
         {generatingCoaches && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
@@ -317,6 +335,8 @@ export default function TeamSelection() {
             </div>
           </div>
         )}
+
+
 
         {/* Club leagues */}
         {LEAGUES.map(league => (
