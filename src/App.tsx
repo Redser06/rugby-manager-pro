@@ -27,6 +27,7 @@ import EuropeanCups from "./pages/EuropeanCups";
 import SixNations from "./pages/SixNations";
 import ShareView from "./pages/ShareView";
 import Academy from "./pages/Academy";
+import SeasonSummary from "./pages/SeasonSummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ function AppRoutes() {
       <Route path="/european" element={<ProtectedRoute><EuropeanCups /></ProtectedRoute>} />
       <Route path="/six-nations" element={<ProtectedRoute><SixNations /></ProtectedRoute>} />
       <Route path="/match" element={<ProtectedRoute><MatchSimulation /></ProtectedRoute>} />
+      <Route path="/season-summary" element={<ProtectedRoute><SeasonSummary /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
