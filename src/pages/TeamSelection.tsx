@@ -176,12 +176,18 @@ function HorizontalScrollRow({ title, teams, leagueId, onTeamSelect, disabled, g
 
 export default function TeamSelection() {
   const navigate = useNavigate();
-  const { selectTeam } = useGame();
+  const { selectTeam, gameState, resetGame } = useGame();
   const { isAuthenticated } = useAuth();
   const { mode, skin, toggleMode, toggleSkin } = useTheme();
   const [generatingCoaches, setGeneratingCoaches] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
-  const handleTeamSelect = async (teamId: string) => {
+  const hasExistingCareer = !!gameState.selectedTeam;
+  const existingTeamName = gameState.selectedTeam?.name;
+  const existingShort = gameState.selectedTeam?.shortName;
+
+  const runTeamSelect = async (teamId: string) => {
     setGeneratingCoaches(true);
     const allTeams = LEAGUES.flatMap(l => l.teams);
     const otherTeams = allTeams.filter(t => t.id !== teamId);
@@ -191,10 +197,42 @@ export default function TeamSelection() {
     navigate('/dashboard');
   };
 
-  const handleNationSelect = (nation: SixNationsNation) => {
+  const runNationSelect = (nation: SixNationsNation) => {
     const firstTeam = LEAGUES[0].teams[0];
     selectTeam(firstTeam.id);
     navigate('/six-nations', { state: { autoNation: nation } });
+  };
+
+  const handleTeamSelect = (teamId: string) => {
+    if (hasExistingCareer) {
+      setPendingAction(() => () => runTeamSelect(teamId));
+      setGateOpen(true);
+      return;
+    }
+    runTeamSelect(teamId);
+  };
+
+  const handleNationSelect = (nation: SixNationsNation) => {
+    if (hasExistingCareer) {
+      setPendingAction(() => () => runNationSelect(nation));
+      setGateOpen(true);
+      return;
+    }
+    runNationSelect(nation);
+  };
+
+  const confirmContinue = () => {
+    setGateOpen(false);
+    setPendingAction(null);
+    navigate('/dashboard');
+  };
+
+  const confirmNewCareer = () => {
+    resetGame();
+    setGateOpen(false);
+    const next = pendingAction;
+    setPendingAction(null);
+    if (next) next();
   };
 
   return (
