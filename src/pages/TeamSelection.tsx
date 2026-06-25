@@ -11,6 +11,14 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Sun, Moon, Tv, Zap } from 'lucide-react';
 import { RugbyBallLogo } from '@/components/RugbyBallLogo';
 import { Team } from '@/types/game';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
@@ -176,12 +184,18 @@ function HorizontalScrollRow({ title, teams, leagueId, onTeamSelect, disabled, g
 
 export default function TeamSelection() {
   const navigate = useNavigate();
-  const { selectTeam } = useGame();
+  const { selectTeam, gameState, resetGame } = useGame();
   const { isAuthenticated } = useAuth();
   const { mode, skin, toggleMode, toggleSkin } = useTheme();
   const [generatingCoaches, setGeneratingCoaches] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
-  const handleTeamSelect = async (teamId: string) => {
+  const hasExistingCareer = !!gameState.selectedTeam;
+  const existingTeamName = gameState.selectedTeam?.name;
+  const existingShort = gameState.selectedTeam?.shortName;
+
+  const runTeamSelect = async (teamId: string) => {
     setGeneratingCoaches(true);
     const allTeams = LEAGUES.flatMap(l => l.teams);
     const otherTeams = allTeams.filter(t => t.id !== teamId);
@@ -191,10 +205,42 @@ export default function TeamSelection() {
     navigate('/dashboard');
   };
 
-  const handleNationSelect = (nation: SixNationsNation) => {
+  const runNationSelect = (nation: SixNationsNation) => {
     const firstTeam = LEAGUES[0].teams[0];
     selectTeam(firstTeam.id);
     navigate('/six-nations', { state: { autoNation: nation } });
+  };
+
+  const handleTeamSelect = (teamId: string) => {
+    if (hasExistingCareer) {
+      setPendingAction(() => () => runTeamSelect(teamId));
+      setGateOpen(true);
+      return;
+    }
+    runTeamSelect(teamId);
+  };
+
+  const handleNationSelect = (nation: SixNationsNation) => {
+    if (hasExistingCareer) {
+      setPendingAction(() => () => runNationSelect(nation));
+      setGateOpen(true);
+      return;
+    }
+    runNationSelect(nation);
+  };
+
+  const confirmContinue = () => {
+    setGateOpen(false);
+    setPendingAction(null);
+    navigate('/dashboard');
+  };
+
+  const confirmNewCareer = () => {
+    resetGame();
+    setGateOpen(false);
+    const next = pendingAction;
+    setPendingAction(null);
+    if (next) next();
   };
 
   return (
@@ -266,6 +312,24 @@ export default function TeamSelection() {
 
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-6 py-8 space-y-10">
+        {/* Continue-career banner */}
+        {hasExistingCareer && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Career in progress</p>
+              <p className="text-sm sm:text-base font-semibold text-foreground">
+                {existingTeamName} · Season {gameState.currentSeason}, Week {gameState.currentWeek}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick a new team below to start over (we'll confirm before overwriting).
+              </p>
+            </div>
+            <Button onClick={() => navigate('/dashboard')} className="sm:ml-4">
+              Continue {existingShort}
+            </Button>
+          </div>
+        )}
+
         {/* Loading overlay */}
         {generatingCoaches && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
@@ -279,6 +343,8 @@ export default function TeamSelection() {
             </div>
           </div>
         )}
+
+
 
         {/* Club leagues */}
         {LEAGUES.map(league => (
@@ -362,6 +428,29 @@ export default function TeamSelection() {
           </div>
         </div>
       </div>
+
+      {/* New career vs continue confirmation */}
+      <AlertDialog open={gateOpen} onOpenChange={setGateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Overwrite your existing career?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have an active save with <span className="font-semibold text-foreground">{existingTeamName}</span> —
+              Season {gameState.currentSeason}, Week {gameState.currentWeek}.
+              Starting a new career will permanently erase it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={confirmContinue}>
+              Continue {existingShort}
+            </Button>
+            <Button variant="destructive" onClick={confirmNewCareer}>
+              Start new career
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

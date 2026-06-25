@@ -349,7 +349,7 @@ export default function Dashboard() {
           <CardTitle>Starting XV Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-15 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-[repeat(15,minmax(0,1fr))] gap-2">
             {startingXI.map(player => (
               <div key={player.id} className="text-center p-2 bg-muted rounded-md">
                 <div className="text-xs font-bold text-primary">{player.positionNumber}</div>
