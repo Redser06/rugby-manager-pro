@@ -11,6 +11,14 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Users, Trophy, Star, UserCircle, LogIn, Flag, ChevronLeft, ChevronRight, Sun, Moon, Tv, Zap } from 'lucide-react';
 import { RugbyBallLogo } from '@/components/RugbyBallLogo';
 import { Team } from '@/types/game';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const FLAG_EMOJI: Record<SixNationsNation, string> = {
   'Ireland': '🇮🇪',
@@ -420,6 +428,29 @@ export default function TeamSelection() {
           </div>
         </div>
       </div>
+
+      {/* New career vs continue confirmation */}
+      <AlertDialog open={gateOpen} onOpenChange={setGateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Overwrite your existing career?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have an active save with <span className="font-semibold text-foreground">{existingTeamName}</span> —
+              Season {gameState.currentSeason}, Week {gameState.currentWeek}.
+              Starting a new career will permanently erase it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={confirmContinue}>
+              Continue {existingShort}
+            </Button>
+            <Button variant="destructive" onClick={confirmNewCareer}>
+              Start new career
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
