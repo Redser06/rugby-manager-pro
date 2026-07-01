@@ -10,6 +10,7 @@ import { Team, League, LeagueStanding, Player } from '@/types/game';
 import { SeasonSchedule, Fixture } from '@/types/fixture';
 import { simulateFullMatch, createDefaultSubPlan } from './matchSimulator';
 import { StaffBonuses, calculateStaffBonuses } from '@/types/staff';
+import { EnhancedMatch } from '@/types/matchEngine';
 
 const EMPTY_STAFF_BONUSES: StaffBonuses = {
   scrumBonus: 0, lineoutBonus: 0, tackleBonus: 0, kickingBonus: 0,
@@ -75,17 +76,33 @@ function quickSimMatch(homeTeam: Team, awayTeam: Team): QuickMatchResult {
 // SIMULATE WEEK
 // ========================
 
+export interface PlayerMatchResult {
+  homeScore: number;
+  awayScore: number;
+  opponent: string;
+  isHome: boolean;
+  won: boolean;
+  /**
+   * Full rich match output (P0.3) — the complete EnhancedMatch from
+   * simulateFullMatch: minute-by-minute events with commentary + scoreDelta,
+   * both teams' MatchStats (possession/territory/etc.), per-player ratings,
+   * MOTM, bonus points, referee, weather, discipline, substitutions.
+   *
+   * This is the data contract for the MatchExperience UI (Lovable Phase B1):
+   *   { events[], homeStats, awayStats, homePlayerRatings, awayPlayerRatings,
+   *     motmName, homeBonus, awayBonus, referee, weather, ... }
+   * Present whenever the player's fixture was resolved by the full sim; absent
+   * (undefined) on a bye week or when the full sim threw and we fell back to
+   * quickSimMatch (which has no events/ratings).
+   */
+  enhancedMatch?: EnhancedMatch;
+}
+
 export interface WeekSimResult {
   updatedSchedule: SeasonSchedule;
   updatedLeagues: League[];
   updatedTeam: Team | null;
-  playerMatchResult?: {
-    homeScore: number;
-    awayScore: number;
-    opponent: string;
-    isHome: boolean;
-    won: boolean;
-  };
+  playerMatchResult?: PlayerMatchResult;
 }
 
 function getStaffBonuses(team: Team): StaffBonuses {
@@ -128,6 +145,7 @@ export function simulateWeek(
       (fixture.homeTeamId === selectedTeam.id || fixture.awayTeamId === selectedTeam.id);
 
     let homeScore: number, awayScore: number, homeTries: number, awayTries: number;
+    let enhancedMatch: EnhancedMatch | undefined;
 
     if (isPlayerMatch) {
       try {
@@ -143,8 +161,10 @@ export function simulateWeek(
         awayScore = result.awayScore;
         homeTries = result.homeTries;
         awayTries = result.awayTries;
+        // Preserve the full rich output for the MatchExperience UI (P0.3).
+        enhancedMatch = result;
       } catch {
-        // Fallback to quick sim if full sim fails
+        // Fallback to quick sim if full sim fails (no events/ratings available)
         const result = quickSimMatch(homeTeam, awayTeam);
         homeScore = result.homeScore;
         awayScore = result.awayScore;
@@ -160,6 +180,7 @@ export function simulateWeek(
         opponent: isHome ? fixture.awayTeamName : fixture.homeTeamName,
         isHome,
         won: myScore > oppScore,
+        enhancedMatch,
       };
     } else {
       const result = quickSimMatch(homeTeam, awayTeam);
